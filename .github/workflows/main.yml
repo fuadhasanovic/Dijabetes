@@ -29,7 +29,7 @@ jobs:
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v3
         with:
-          gradle-version: 8.5
+          gradle-version: 8.12
 
       - name: Install Dependencies
         run: npm install
@@ -43,7 +43,10 @@ jobs:
       - name: Build Android APK
         run: |
           cd android
-          gradle assembleDebug --no-daemon
+          # Fix corrupted wrapper if it exists (uses system gradle from setup-gradle)
+          gradle wrapper --gradle-version 8.12
+          chmod +x gradlew
+          ./gradlew assembleDebug --no-daemon
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
