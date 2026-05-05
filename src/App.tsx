@@ -292,34 +292,34 @@ export default function App() {
         </main>
 
         <nav className="fixed bottom-0 w-full max-w-md bg-white/95 backdrop-blur-lg border-t border-slate-100 px-6 py-4 flex justify-between items-center z-50">
-            <NavButton 
+          <NavButton 
             active={currentTab === 'profile'} 
             onClick={() => setCurrentTab('profile')} 
-            icon={<User size={26} className="transition-transform active:scale-110" />} 
+            icon={<User size={28} className={`transition-all ${currentTab === 'profile' ? 'scale-110' : ''}`} />} 
             label="Profil" 
           />
           <NavButton 
             active={currentTab === 'glucose'} 
             onClick={() => setCurrentTab('glucose')} 
-            icon={<TrendingUp size={24} />} 
+            icon={<TrendingUp size={28} className={`transition-all ${currentTab === 'glucose' ? 'scale-110' : ''}`} />} 
             label="Šećer" 
           />
           <NavButton 
             active={currentTab === 'meals'} 
             onClick={() => setCurrentTab('meals')} 
-            icon={<Utensils size={24} />} 
+            icon={<Utensils size={28} className={`transition-all ${currentTab === 'meals' ? 'scale-110' : ''}`} />} 
             label="Hrana" 
           />
           <NavButton 
             active={currentTab === 'activity'} 
             onClick={() => setCurrentTab('activity')} 
-            icon={<Activity size={24} />} 
+            icon={<Activity size={28} className={`transition-all ${currentTab === 'activity' ? 'scale-110' : ''}`} />} 
             label="Sport" 
           />
           <NavButton 
             active={currentTab === 'advice'} 
             onClick={() => setCurrentTab('advice')} 
-            icon={<HeartPulse size={24} />} 
+            icon={<HeartPulse size={28} className={`transition-all ${currentTab === 'advice' ? 'scale-110' : ''}`} />} 
             label="Pomoć" 
           />
         </nav>
