@@ -27,9 +27,10 @@ jobs:
           java-version: '21'
 
       - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v3
+        uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: 8.12
+          cache-disabled: false # Promijenite u true ako GitHub i dalje javlja greške sa cache-om
 
       - name: Install Dependencies
         run: npm install
@@ -43,10 +44,8 @@ jobs:
       - name: Build Android APK
         run: |
           cd android
-          # Fix corrupted wrapper if it exists (uses system gradle from setup-gradle)
-          gradle wrapper --gradle-version 8.12
-          chmod +x gradlew
-          ./gradlew assembleDebug --no-daemon
+          # Koristimo direktno 'gradle' umjesto './gradlew' kako bi izbjegli korumpirani jar fajl
+          gradle assembleDebug --no-daemon
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
