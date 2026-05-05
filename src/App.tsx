@@ -334,10 +334,12 @@ function NavButton({ active, icon, label, onClick }: { active: boolean, icon: Re
       onClick={onClick}
       className={`flex flex-col items-center gap-1 transition-all ${active ? 'text-blue-600' : 'text-slate-300 hover:text-slate-500'}`}
     >
-      <div className={`p-1 rounded-xl transition-all ${active ? 'bg-blue-50' : ''}`}>
+      <div className={`p-2 rounded-2xl transition-all duration-300 ${active ? 'bg-blue-600 text-white shadow-lg shadow-blue-200' : 'text-slate-400 group-hover:text-slate-600'}`}>
         {icon}
       </div>
-      <span className={`text-[10px] font-bold uppercase tracking-tighter ${active ? 'opacity-100 font-black' : 'opacity-0'}`}>{label}</span>
+      <span className={`text-[9px] font-bold uppercase tracking-widest transition-all duration-300 ${active ? 'text-blue-600 opacity-100 scale-105' : 'text-slate-400 opacity-70'}`}>
+        {label}
+      </span>
       {active && (
         <motion.div layoutId="nav-pill" className="w-1 h-1 bg-blue-600 rounded-full mt-0.5" />
       )}
