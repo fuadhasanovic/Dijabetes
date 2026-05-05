@@ -1,0 +1,80 @@
+{
+  "entities": {
+    "userProfile": {
+      "title": "User Profile",
+      "description": "Personal data, physical measurements, and BMI information.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "name": { "type": "string" },
+        "age": { "type": "number" },
+        "weight": { "type": "number" },
+        "height": { "type": "number" },
+        "bmi": { "type": "number" },
+        "bmiCategory": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "name", "weight", "height"]
+    },
+    "glucoseMeasurement": {
+      "title": "Glucose Measurement",
+      "description": "Blood sugar reading with context (fasting, meal type, etc.).",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "level": { "type": "number", "description": "Glucose level in mmol/L or mg/dL" },
+        "context": { 
+          "type": "string", 
+          "enum": ["fasting", "before_breakfast", "after_breakfast", "before_lunch", "after_lunch", "before_dinner", "after_dinner", "before_bed"] 
+        },
+        "timestamp": { "type": "string", "format": "date-time" },
+        "notes": { "type": "string" }
+      },
+      "required": ["userId", "level", "context", "timestamp"]
+    },
+    "foodItem": {
+      "title": "Food Item",
+      "description": "A food item with glycemic index metrics.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "description": "Optional: null for system defaults" },
+        "name": { "type": "string" },
+        "gi": { "type": "number", "description": "Glycemic Index" },
+        "category": { "type": "string", "enum": ["NI", "SI", "VI"], "description": "L-M-H index category" }
+      },
+      "required": ["name", "gi", "category"]
+    },
+    "activity": {
+      "title": "Daily Activity",
+      "description": "Exercise or physical activity logs.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "type": { "type": "string", "enum": ["walking", "running", "cycling", "exercise", "other"] },
+        "duration": { "type": "number", "description": "In minutes" },
+        "intensity": { "type": "string", "enum": ["low", "medium", "high"] },
+        "caloriesBurned": { "type": "number" },
+        "timestamp": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "type", "duration", "timestamp"]
+    }
+  },
+  "firestore": {
+    "userProfiles": {
+      "schema": "userProfile",
+      "description": "One document per user profile."
+    },
+    "glucoseMeasurements": {
+      "schema": "glucoseMeasurement",
+      "description": "Sub-collection or root collection for all measurements."
+    },
+    "foodDatabase": {
+      "schema": "foodItem",
+      "description": "System and user-defined food items."
+    },
+    "activities": {
+      "schema": "activity",
+      "description": "Physical activity logs for users."
+    }
+  }
+}

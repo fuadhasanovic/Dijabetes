@@ -1,0 +1,93 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Default deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // --- Helpers ---
+    function isSignedIn() {
+      return request.auth != null;
+    }
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+    function incoming() {
+      return request.resource.data;
+    }
+    function existing() {
+      return resource.data;
+    }
+
+    // --- Entity Validations ---
+    function isValidUserProfile(data) {
+      return data.keys().hasAll(['userId', 'name', 'weight', 'height']) &&
+             data.userId == request.auth.uid &&
+             data.name is string && data.name.size() > 0 && data.name.size() <= 100 &&
+             data.weight is number && data.weight > 0 && data.weight < 500 &&
+             data.height is number && data.height > 50 && data.height < 300;
+    }
+
+    function isValidMeasurement(data) {
+      return data.keys().hasAll(['userId', 'level', 'context', 'timestamp']) &&
+             data.userId == request.auth.uid &&
+             data.level is number && data.level > 0 && data.level < 50 &&
+             data.context in ['fasting', 'before_breakfast', 'after_breakfast', 'before_lunch', 'after_lunch', 'before_dinner', 'after_dinner', 'before_bed'] &&
+             (data.timestamp is timestamp || data.timestamp == null);
+    }
+
+    function isValidFood(data) {
+      return data.keys().hasAll(['name', 'gi', 'category']) &&
+             data.name is string && data.name.size() > 0 && data.name.size() <= 200 &&
+             data.gi is number && data.gi >= 0 && data.gi <= 150 &&
+             data.category in ['NI', 'SI', 'VI'];
+    }
+
+    function isValidActivity(data) {
+      return data.keys().hasAll(['userId', 'type', 'duration', 'timestamp']) &&
+             data.userId == request.auth.uid &&
+             data.type in ['walking', 'running', 'cycling', 'exercise', 'other'] &&
+             data.duration is number && data.duration > 0 && data.duration < 1440 &&
+             (data.timestamp is timestamp || data.timestamp == null);
+    }
+
+    // --- Collection Routes ---
+
+    match /userProfiles/{profileId} {
+      allow get: if isOwner(profileId);
+      allow create: if isOwner(profileId) && isValidUserProfile(incoming());
+      allow update: if isOwner(profileId) && isValidUserProfile(incoming()) && 
+                    incoming().userId == existing().userId;
+      allow delete: if isOwner(profileId);
+    }
+
+    match /glucoseMeasurements/{docId} {
+      allow get: if isOwner(existing().userId);
+      allow list: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow create: if isSignedIn() && incoming().userId == request.auth.uid && isValidId(docId) && isValidMeasurement(incoming());
+      allow update: if isOwner(existing().userId) && isValidMeasurement(incoming()) && incoming().userId == existing().userId;
+      allow delete: if isOwner(existing().userId);
+    }
+
+    match /foodDatabase/{docId} {
+      // System food has userId == null or not present
+      // User food has userId == auth.uid
+      allow read: if isSignedIn() && (resource.data.userId == null || resource.data.userId == request.auth.uid);
+      allow create: if isSignedIn() && incoming().userId == request.auth.uid && isValidFood(incoming());
+      allow update: if isSignedIn() && existing().userId == request.auth.uid && isValidFood(incoming()) && incoming().userId == request.auth.uid;
+      allow delete: if isSignedIn() && existing().userId == request.auth.uid;
+    }
+
+    match /activities/{docId} {
+      allow get: if isOwner(existing().userId);
+      allow list: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow create: if isSignedIn() && incoming().userId == request.auth.uid && isValidActivity(incoming());
+      allow update: if isOwner(existing().userId) && isValidActivity(incoming()) && incoming().userId == existing().userId;
+      allow delete: if isOwner(existing().userId);
+    }
+  }
+}
