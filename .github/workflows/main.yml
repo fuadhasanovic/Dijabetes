@@ -39,12 +39,15 @@ jobs:
         run: npm run build
 
       - name: Capacitor Sync
-        run: npx cap sync android
+        run: |
+          npx cap sync android
+          # Osigurajmo da Capacitor nije ponovo kreirao wrapper fajlove koji mogu uzrokovati greske validacije
+          rm -f android/gradlew android/gradlew.bat android/gradle/wrapper/gradle-wrapper.jar
 
       - name: Build Android APK
         run: |
           cd android
-          # Koristimo direktno 'gradle' umjesto './gradlew' kako bi izbjegli korumpirani jar fajl
+          # Koristimo 'gradle' (system-wide) umjesto './gradlew' (wrapper)
           gradle assembleDebug --no-daemon
 
       - name: Upload APK
