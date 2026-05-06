@@ -7,9 +7,10 @@ import { toDate } from '../lib/firebase';
 interface ActivityLogsProps {
   logs: ActivityLog[];
   onAdd: (log: Omit<ActivityLog, 'id'>) => void;
+  translations: any;
 }
 
-export default function ActivityLogs({ logs, onAdd }: ActivityLogsProps) {
+export default function ActivityLogs({ logs, onAdd, translations: t }: ActivityLogsProps) {
   const [showAdd, setShowAdd] = useState(false);
   const [newLog, setNewLog] = useState({
     type: ActivityType.WALKING,
@@ -17,8 +18,15 @@ export default function ActivityLogs({ logs, onAdd }: ActivityLogsProps) {
     intensity: 'medium' as 'low'|'medium'|'high',
   });
 
+  const typeLabels: Record<string, string> = {
+    [ActivityType.WALKING]: t.types.walking,
+    [ActivityType.RUNNING]: t.types.running,
+    [ActivityType.CYCLING]: t.types.cycling,
+    [ActivityType.EXERCISE]: t.types.exercise,
+    [ActivityType.OTHER]: t.types.other,
+  };
+
   const calculateCalories = (type: ActivityType, duration: number, intensity: string) => {
-    // MET values: Walking (3.5), Running (8.0), Cycling (6.0), Exercise (5.0)
     const baseMET = {
       [ActivityType.WALKING]: 3.5,
       [ActivityType.RUNNING]: 8.0,
@@ -28,8 +36,6 @@ export default function ActivityLogs({ logs, onAdd }: ActivityLogsProps) {
     }[type];
 
     const intensityMultiplier = { low: 0.8, medium: 1.0, high: 1.3 }[intensity as 'low'|'medium'|'high'];
-    // Calorie formula: (MET * 3.5 * weight_kg / 200) * duration_min
-    // Using average weight 80kg if not specified
     const weight = 80; 
     return Math.round((baseMET * intensityMultiplier * 3.5 * weight / 200) * duration);
   };
@@ -42,12 +48,12 @@ export default function ActivityLogs({ logs, onAdd }: ActivityLogsProps) {
     e.preventDefault();
     const calories = calculateCalories(newLog.type, newLog.duration, newLog.intensity);
     onAdd({
-      userId: '', // set by parent
+      userId: '', 
       type: newLog.type,
       duration: newLog.duration,
       intensity: newLog.intensity,
       caloriesBurned: calories,
-      timestamp: '', // will be set by serverTimestamp in App.tsx
+      timestamp: '', 
     });
     setShowAdd(false);
   };
@@ -56,8 +62,8 @@ export default function ActivityLogs({ logs, onAdd }: ActivityLogsProps) {
     <div className="space-y-6">
       <div className="flex justify-between items-center mb-4">
         <div>
-          <h2 className="text-2xl font-bold">Aktivnosti</h2>
-          <p className="text-slate-500 text-sm">Pratite vašu potrošnju energije</p>
+          <h2 className="text-2xl font-bold">{t.title}</h2>
+          <p className="text-slate-500 text-sm">{t.subtitle}</p>
         </div>
         <div className="flex gap-2">
           <button className="w-10 h-10 bg-slate-100 rounded-full flex items-center justify-center text-slate-600">
@@ -69,7 +75,7 @@ export default function ActivityLogs({ logs, onAdd }: ActivityLogsProps) {
       <div className="p-6 bg-orange-600 rounded-3xl text-white shadow-xl shadow-orange-200 relative overflow-hidden">
         <div className="relative z-10 flex justify-between items-center">
           <div>
-            <p className="text-orange-100 text-[10px] font-bold uppercase tracking-widest mb-1">Danas potrošeno</p>
+            <p className="text-orange-100 text-[10px] font-bold uppercase tracking-widest mb-1">{t.today}</p>
             <div className="flex items-baseline gap-1">
               <span className="text-5xl font-black">{currentDayCalories}</span>
               <span className="text-sm font-bold opacity-70 uppercase tracking-tighter">kcal</span>
@@ -88,32 +94,32 @@ export default function ActivityLogs({ logs, onAdd }: ActivityLogsProps) {
           className="w-full py-4 bg-white border border-slate-200 rounded-2xl flex items-center justify-center gap-2 text-slate-900 font-bold shadow-sm hover:bg-slate-50 transition-all"
         >
           <Plus size={20} />
-          Zabilježi Aktivnost
+          {t.addTitle}
         </button>
       ) : (
         <motion.div 
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="p-5 bg-white border border-slate-200 rounded-3xl space-y-4 shadow-lg"
+          className="p-5 bg-white border border-slate-200 rounded-3xl space-y-4 shadow-lg text-sm"
         >
           <div className="space-y-4">
             <div>
-              <label className="block text-xs font-bold text-slate-400 uppercase mb-2">Vrsta Aktivnosti</label>
+              <label className="block text-xs font-bold text-slate-400 uppercase mb-2">{t.type}</label>
               <div className="grid grid-cols-2 gap-2">
                 {Object.values(ActivityType).map(type => (
                   <button 
                     key={type}
                     onClick={() => setNewLog({...newLog, type})}
-                    className={`p-3 rounded-xl text-xs font-bold capitalize transition-all ${newLog.type === type ? 'bg-orange-600 text-white shadow-inner' : 'bg-slate-50 text-slate-500'}`}
+                    className={`p-3 rounded-xl text-[10px] uppercase tracking-widest font-bold transition-all ${newLog.type === type ? 'bg-orange-600 text-white shadow-inner' : 'bg-slate-50 text-slate-500'}`}
                   >
-                    {type}
+                    {typeLabels[type] || type}
                   </button>
                 ))}
               </div>
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-bold text-slate-400 uppercase mb-2">Trajanje (min)</label>
+                <label className="block text-xs font-bold text-slate-400 uppercase mb-2">{t.duration}</label>
                 <input 
                   type="number" 
                   className="w-full p-4 bg-slate-50 rounded-2xl border-none font-black text-xl text-center"
@@ -122,7 +128,7 @@ export default function ActivityLogs({ logs, onAdd }: ActivityLogsProps) {
                 />
               </div>
               <div>
-                <label className="block text-xs font-bold text-slate-400 uppercase mb-2">Intenzitet</label>
+                <label className="block text-xs font-bold text-slate-400 uppercase mb-2">{t.intensity}</label>
                 <div className="flex gap-1">
                   {['low', 'medium', 'high'].map(i => (
                     <button 
@@ -149,7 +155,6 @@ export default function ActivityLogs({ logs, onAdd }: ActivityLogsProps) {
         </motion.div>
       )}
 
-      {/* Activity Logs */}
       <div className="space-y-3">
         {logs.slice().reverse().map((log, idx) => (
           <div key={idx} className="p-4 bg-white border border-slate-50 rounded-2xl flex items-center justify-between group">
@@ -158,7 +163,7 @@ export default function ActivityLogs({ logs, onAdd }: ActivityLogsProps) {
                 <ActivityIcon type={log.type} />
               </div>
               <div>
-                <p className="font-bold text-slate-900 text-sm capitalize">{log.type}</p>
+                <p className="font-bold text-slate-900 text-sm capitalize">{typeLabels[log.type] || log.type}</p>
                 <div className="flex gap-2 items-center">
                   <span className="flex items-center gap-1 text-[10px] text-slate-400 font-bold uppercase"><Clock size={10} /> {log.duration} MIN</span>
                   <span className="w-1 h-1 bg-slate-200 rounded-full" />
@@ -171,7 +176,7 @@ export default function ActivityLogs({ logs, onAdd }: ActivityLogsProps) {
                 {log.caloriesBurned}
                 <Flame size={14} className="text-orange-500" />
               </p>
-              <p className="text-[10px] text-slate-400">KCALS</p>
+              <p className="text-[10px] text-slate-400 uppercase font-black">kcal</p>
             </div>
           </div>
         ))}

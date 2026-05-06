@@ -66,8 +66,9 @@ export interface Meal {
   userId: string;
   name: string;
   foods: FoodItem[];
-  dayOfWeek: string;
-  type: 'breakfast' | 'lunch' | 'dinner' | 'snack';
+  dayOfWeek: string; // 'Monday', 'Tuesday', etc.
+  mealType: 'breakfast' | 'lunch' | 'dinner' | 'snack';
+  timestamp?: any;
 }
 
 export interface Language {
@@ -80,5 +81,6 @@ export const SUPPORTED_LANGUAGES: Language[] = [
   { code: 'hr', name: 'Hrvatski' },
   { code: 'sr', name: 'Srpski' },
   { code: 'en', name: 'English' },
+  { code: 'de', name: 'Deutsch' },
   { code: 'tr', name: 'Türkçe' },
 ];

@@ -40,6 +40,7 @@ import {
   Meal,
   SUPPORTED_LANGUAGES
 } from './types';
+import { translations, FLAGS } from './lib/translations';
 
 type Tab = 'profile' | 'glucose' | 'meals' | 'activity' | 'advice';
 
@@ -56,6 +57,8 @@ export default function App() {
   const [foods, setFoods] = useState<FoodItem[]>([]);
   const [activities, setActivities] = useState<ActivityLog[]>([]);
   const [meals, setMeals] = useState<Meal[]>([]);
+
+  const t = translations[language] || translations.bs;
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, (u) => {
@@ -109,11 +112,21 @@ export default function App() {
       setActivities(data.sort((a, b) => toDate(a.timestamp).getTime() - toDate(b.timestamp).getTime()));
     }, (err) => handleFirestoreError(err, OperationType.LIST, pathAct));
 
+    const pathMeals = 'meals';
+    const mealsQuery = query(
+      collection(db, pathMeals),
+      where('userId', '==', user.uid)
+    );
+    const mealsUnsub = onSnapshot(mealsQuery, (snap) => {
+      setMeals(snap.docs.map(d => ({ id: d.id, ...d.data() } as Meal)));
+    }, (err) => handleFirestoreError(err, OperationType.LIST, pathMeals));
+
     return () => {
       profUnsub();
       measUnsub();
       foodUnsub();
       actUnsub();
+      mealsUnsub();
     };
   }, [user]);
 
@@ -162,6 +175,20 @@ export default function App() {
   const handleAddActivity = async (data: Omit<ActivityLog, 'id'>) => {
     if (!user) return;
     const path = 'activities';
+    try {
+      await addDoc(collection(db, path), {
+        ...data,
+        userId: user.uid,
+        timestamp: serverTimestamp(),
+      });
+    } catch (err) {
+      handleFirestoreError(err, OperationType.WRITE, path);
+    }
+  };
+
+  const handleAddMeal = async (data: Omit<Meal, 'id'>) => {
+    if (!user) return;
+    const path = 'meals';
     try {
       await addDoc(collection(db, path), {
         ...data,
@@ -236,16 +263,25 @@ export default function App() {
               <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">{profile?.name || 'Korisnik'}</p>
             </div>
           </div>
-          <div className="flex gap-2">
-            <select 
-              value={language}
-              onChange={(e) => setLanguage(e.target.value)}
-              className="bg-transparent text-[10px] font-bold uppercase tracking-widest text-slate-400 focus:outline-none cursor-pointer"
-            >
-              {SUPPORTED_LANGUAGES.map(lang => (
-                <option key={lang.code} value={lang.code}>{lang.code}</option>
-              ))}
-            </select>
+          <div className="flex gap-4 items-center">
+            <div className="relative group">
+              <div className="flex items-center gap-1 cursor-pointer p-1 rounded-lg hover:bg-slate-50 transition-colors">
+                <span className="text-xl">{FLAGS[language]}</span>
+                <Globe size={14} className="text-slate-400" />
+              </div>
+              <div className="absolute right-0 top-full mt-2 bg-white rounded-2xl shadow-2xl border border-slate-100 p-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50 min-w-[140px]">
+                {SUPPORTED_LANGUAGES.map(lang => (
+                  <button
+                    key={lang.code}
+                    onClick={() => setLanguage(lang.code)}
+                    className={`w-full flex items-center justify-between gap-3 px-3 py-2 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-colors ${language === lang.code ? 'bg-blue-50 text-blue-600' : 'text-slate-500 hover:bg-slate-50'}`}
+                  >
+                    <span>{FLAGS[lang.code]} {lang.name}</span>
+                    {language === lang.code && <div className="w-1.5 h-1.5 bg-blue-600 rounded-full" />}
+                  </button>
+                ))}
+              </div>
+            </div>
             <button className="p-2 text-slate-400 hover:text-slate-900 transition-colors">
               <Menu size={24} />
             </button>
@@ -266,12 +302,13 @@ export default function App() {
                 exit={{ opacity: 0, x: -10 }}
                 transition={{ duration: 0.2 }}
               >
-                {currentTab === 'profile' && <ProfileForm initialData={profile} onSave={handleSaveProfile} />}
+                {currentTab === 'profile' && <ProfileForm initialData={profile} onSave={handleSaveProfile} translations={t.profile} />}
                 {currentTab === 'glucose' && (
                   <GlucoseDash 
                     measurements={measurements} 
                     onAdd={handleAddMeasurement} 
                     onNavigateToAdvice={() => setCurrentTab('advice')}
+                    translations={t.glucose}
                   />
                 )}
                 {currentTab === 'meals' && (
@@ -279,12 +316,14 @@ export default function App() {
                     foods={foods} 
                     meals={meals}
                     onAddFood={handleAddFood}
-                    onAddMeal={() => {}}
+                    onAddMeal={handleAddMeal}
                     onDeleteFood={(id) => handleDeleteDoc('foodDatabase', id)}
-                    onDeleteMeal={() => {}}
+                    onDeleteMeal={(id) => handleDeleteDoc('meals', id)}
+                    translations={t.meals}
+                    language={language}
                   />
                 )}
-                {currentTab === 'activity' && <ActivityLogs logs={activities} onAdd={handleAddActivity} />}
+                {currentTab === 'activity' && <ActivityLogs logs={activities} onAdd={handleAddActivity} translations={t.activity} />}
                 {currentTab === 'advice' && <AdviceHub />}
               </motion.div>
             </AnimatePresence>
@@ -296,31 +335,31 @@ export default function App() {
             active={currentTab === 'profile'} 
             onClick={() => setCurrentTab('profile')} 
             icon={<User size={28} className={`transition-all ${currentTab === 'profile' ? 'scale-110' : ''}`} />} 
-            label="Profil" 
+            label={t.nav.profile} 
           />
           <NavButton 
             active={currentTab === 'glucose'} 
             onClick={() => setCurrentTab('glucose')} 
             icon={<TrendingUp size={28} className={`transition-all ${currentTab === 'glucose' ? 'scale-110' : ''}`} />} 
-            label="Šećer" 
+            label={t.nav.glucose} 
           />
           <NavButton 
             active={currentTab === 'meals'} 
             onClick={() => setCurrentTab('meals')} 
             icon={<Utensils size={28} className={`transition-all ${currentTab === 'meals' ? 'scale-110' : ''}`} />} 
-            label="Hrana" 
+            label={t.nav.meals} 
           />
           <NavButton 
             active={currentTab === 'activity'} 
             onClick={() => setCurrentTab('activity')} 
             icon={<Activity size={28} className={`transition-all ${currentTab === 'activity' ? 'scale-110' : ''}`} />} 
-            label="Sport" 
+            label={t.nav.activity} 
           />
           <NavButton 
             active={currentTab === 'advice'} 
             onClick={() => setCurrentTab('advice')} 
             icon={<HeartPulse size={28} className={`transition-all ${currentTab === 'advice' ? 'scale-110' : ''}`} />} 
-            label="Pomoć" 
+            label={t.nav.advice} 
           />
         </nav>
       </div>
