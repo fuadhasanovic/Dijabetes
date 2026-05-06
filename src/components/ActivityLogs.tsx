@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Footprints, Clock, Flame, Plus, ChevronRight, BarChart2, Zap } from 'lucide-react';
 import { motion } from 'motion/react';
 import { ActivityLog, ActivityType } from '../types';
+import { toDate } from '../lib/firebase';
 
 interface ActivityLogsProps {
   logs: ActivityLog[];
@@ -34,7 +35,7 @@ export default function ActivityLogs({ logs, onAdd }: ActivityLogsProps) {
   };
 
   const currentDayCalories = logs
-    .filter(l => new Date(l.timestamp).toDateString() === new Date().toDateString())
+    .filter(l => toDate(l.timestamp).toDateString() === new Date().toDateString())
     .reduce((acc, curr) => acc + curr.caloriesBurned, 0);
 
   const handleSubmit = (e: React.FormEvent) => {

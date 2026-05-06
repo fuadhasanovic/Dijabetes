@@ -6,6 +6,7 @@ import {
 } from 'recharts';
 import { format, subDays, isAfter } from 'date-fns';
 import { GlucoseMeasurement, GlucoseContext } from '../types';
+import { toDate } from '../lib/firebase';
 
 interface GlucoseDashProps {
   measurements: GlucoseMeasurement[];
@@ -23,7 +24,7 @@ export default function GlucoseDash({ measurements, onAdd, onNavigateToAdvice }:
 
   // Calculate Stats
   const now = new Date();
-  const last7Days = measurements.filter(m => isAfter(new Date(m.timestamp), subDays(now, 7)));
+  const last7Days = measurements.filter(m => isAfter(toDate(m.timestamp), subDays(now, 7)));
   const average7Days = last7Days.length > 0 
     ? (last7Days.reduce((acc, curr) => acc + curr.level, 0) / last7Days.length).toFixed(1)
     : '0.0';
@@ -38,7 +39,7 @@ export default function GlucoseDash({ measurements, onAdd, onNavigateToAdvice }:
   const isHigh = parseFloat(average7Days) > 7.0; // Simple threshold for warning
 
   const chartData = measurements.slice(-10).map(m => ({
-    date: format(new Date(m.timestamp), 'dd.MM'),
+    date: format(toDate(m.timestamp), 'dd.MM'),
     level: m.level,
   }));
 
@@ -199,7 +200,7 @@ export default function GlucoseDash({ measurements, onAdd, onNavigateToAdvice }:
               </div>
               <div>
                 <p className="font-bold text-slate-900 text-sm capitalize">{m.context.replace('_', ' ')}</p>
-                <p className="text-[10px] text-slate-400">{format(new Date(m.timestamp), 'dd.MM.yyyy HH:mm')}</p>
+                <p className="text-[10px] text-slate-400">{format(toDate(m.timestamp), 'dd.MM.yyyy HH:mm')}</p>
               </div>
             </div>
             <div className="text-right">

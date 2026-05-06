@@ -22,7 +22,7 @@ import {
   orderBy,
   serverTimestamp
 } from 'firebase/firestore';
-import { db, auth, handleFirestoreError, OperationType } from './lib/firebase';
+import { db, auth, handleFirestoreError, OperationType, toDate } from './lib/firebase';
 import { onAuthStateChanged, signInWithPopup, GoogleAuthProvider } from 'firebase/auth';
 
 import Splash from './components/Splash';
@@ -85,8 +85,8 @@ export default function App() {
     );
     const measUnsub = onSnapshot(measQuery, (snap) => {
       const data = snap.docs.map(d => ({ id: d.id, ...d.data() } as GlucoseMeasurement));
-      // Sort in memory
-      setMeasurements(data.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()));
+      // Sort in memory using safe toDate
+      setMeasurements(data.sort((a, b) => toDate(a.timestamp).getTime() - toDate(b.timestamp).getTime()));
     }, (err) => handleFirestoreError(err, OperationType.LIST, pathMeas));
 
     const pathFood = 'foodDatabase';
@@ -106,7 +106,7 @@ export default function App() {
     );
     const actUnsub = onSnapshot(actQuery, (snap) => {
       const data = snap.docs.map(d => ({ id: d.id, ...d.data() } as ActivityLog));
-      setActivities(data.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()));
+      setActivities(data.sort((a, b) => toDate(a.timestamp).getTime() - toDate(b.timestamp).getTime()));
     }, (err) => handleFirestoreError(err, OperationType.LIST, pathAct));
 
     return () => {
