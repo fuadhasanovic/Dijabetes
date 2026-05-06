@@ -41,10 +41,25 @@ service cloud.firestore {
     }
 
     function isValidFood(data) {
-      return data.keys().hasAll(['name', 'gi', 'category']) &&
+      return data.keys().hasAll(['name', 'gi', 'category', 'userId']) &&
+             data.userId == request.auth.uid &&
              data.name is string && data.name.size() > 0 && data.name.size() <= 200 &&
              data.gi is number && data.gi >= 0 && data.gi <= 150 &&
              data.category in ['NI', 'SI', 'VI'];
+    }
+
+    function isValidSavedMeal(data) {
+      return data.keys().hasAll(['name', 'foods', 'userId', 'timestamp']) &&
+             data.userId == request.auth.uid &&
+             data.name is string && data.name.size() > 0 && data.name.size() <= 100 &&
+             data.foods is list && data.foods.size() > 0;
+    }
+
+    function isValidMenuPlan(data) {
+      return data.keys().hasAll(['name', 'assignments', 'userId', 'timestamp']) &&
+             data.userId == request.auth.uid &&
+             data.name is string && data.name.size() > 0 && data.name.size() <= 100 &&
+             data.assignments is map;
     }
 
     function isValidActivity(data) {
@@ -87,6 +102,18 @@ service cloud.firestore {
       allow list: if isSignedIn() && resource.data.userId == request.auth.uid;
       allow create: if isSignedIn() && incoming().userId == request.auth.uid && isValidActivity(incoming());
       allow update: if isOwner(existing().userId) && isValidActivity(incoming()) && incoming().userId == existing().userId;
+      allow delete: if isOwner(existing().userId);
+    }
+
+    match /savedMeals/{docId} {
+      allow read: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow create: if isSignedIn() && incoming().userId == request.auth.uid && isValidSavedMeal(incoming());
+      allow delete: if isOwner(existing().userId);
+    }
+
+    match /menuPlans/{docId} {
+      allow read: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow create: if isSignedIn() && incoming().userId == request.auth.uid && isValidMenuPlan(incoming());
       allow delete: if isOwner(existing().userId);
     }
   }

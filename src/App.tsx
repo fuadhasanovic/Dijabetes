@@ -37,7 +37,8 @@ import {
   GlucoseMeasurement, 
   FoodItem, 
   ActivityLog, 
-  Meal,
+  SavedMeal,
+  MenuPlan,
   SUPPORTED_LANGUAGES
 } from './types';
 import { translations, FLAGS } from './lib/translations';
@@ -56,7 +57,8 @@ export default function App() {
   const [measurements, setMeasurements] = useState<GlucoseMeasurement[]>([]);
   const [foods, setFoods] = useState<FoodItem[]>([]);
   const [activities, setActivities] = useState<ActivityLog[]>([]);
-  const [meals, setMeals] = useState<Meal[]>([]);
+  const [savedMeals, setSavedMeals] = useState<SavedMeal[]>([]);
+  const [menuPlans, setMenuPlans] = useState<MenuPlan[]>([]);
 
   const t = translations[language] || translations.bs;
 
@@ -112,21 +114,31 @@ export default function App() {
       setActivities(data.sort((a, b) => toDate(a.timestamp).getTime() - toDate(b.timestamp).getTime()));
     }, (err) => handleFirestoreError(err, OperationType.LIST, pathAct));
 
-    const pathMeals = 'meals';
-    const mealsQuery = query(
-      collection(db, pathMeals),
+    const pathSavedMeals = 'savedMeals';
+    const savedMealsQuery = query(
+      collection(db, pathSavedMeals),
       where('userId', '==', user.uid)
     );
-    const mealsUnsub = onSnapshot(mealsQuery, (snap) => {
-      setMeals(snap.docs.map(d => ({ id: d.id, ...d.data() } as Meal)));
-    }, (err) => handleFirestoreError(err, OperationType.LIST, pathMeals));
+    const savedMealsUnsub = onSnapshot(savedMealsQuery, (snap) => {
+      setSavedMeals(snap.docs.map(d => ({ id: d.id, ...d.data() } as SavedMeal)));
+    }, (err) => handleFirestoreError(err, OperationType.LIST, pathSavedMeals));
+
+    const pathMenuPlans = 'menuPlans';
+    const menuPlansQuery = query(
+      collection(db, pathMenuPlans),
+      where('userId', '==', user.uid)
+    );
+    const menuPlansUnsub = onSnapshot(menuPlansQuery, (snap) => {
+      setMenuPlans(snap.docs.map(d => ({ id: d.id, ...d.data() } as MenuPlan)));
+    }, (err) => handleFirestoreError(err, OperationType.LIST, pathMenuPlans));
 
     return () => {
       profUnsub();
       measUnsub();
       foodUnsub();
       actUnsub();
-      mealsUnsub();
+      savedMealsUnsub();
+      menuPlansUnsub();
     };
   }, [user]);
 
@@ -186,9 +198,23 @@ export default function App() {
     }
   };
 
-  const handleAddMeal = async (data: Omit<Meal, 'id'>) => {
+  const handleAddSavedMeal = async (data: Omit<SavedMeal, 'id'>) => {
     if (!user) return;
-    const path = 'meals';
+    const path = 'savedMeals';
+    try {
+      await addDoc(collection(db, path), {
+        ...data,
+        userId: user.uid,
+        timestamp: serverTimestamp(),
+      });
+    } catch (err) {
+      handleFirestoreError(err, OperationType.WRITE, path);
+    }
+  };
+
+  const handleAddMenuPlan = async (data: Omit<MenuPlan, 'id'>) => {
+    if (!user) return;
+    const path = 'menuPlans';
     try {
       await addDoc(collection(db, path), {
         ...data,
@@ -314,11 +340,14 @@ export default function App() {
                 {currentTab === 'meals' && (
                   <MealPlanner 
                     foods={foods} 
-                    meals={meals}
+                    savedMeals={savedMeals}
+                    menuPlans={menuPlans}
                     onAddFood={handleAddFood}
-                    onAddMeal={handleAddMeal}
+                    onAddSavedMeal={handleAddSavedMeal}
+                    onAddMenuPlan={handleAddMenuPlan}
                     onDeleteFood={(id) => handleDeleteDoc('foodDatabase', id)}
-                    onDeleteMeal={(id) => handleDeleteDoc('meals', id)}
+                    onDeleteSavedMeal={(id) => handleDeleteDoc('savedMeals', id)}
+                    onDeleteMenuPlan={(id) => handleDeleteDoc('menuPlans', id)}
                     translations={t.meals}
                     language={language}
                   />

@@ -61,13 +61,26 @@ export interface ActivityLog {
   timestamp: string;
 }
 
-export interface Meal {
+export interface SavedMeal {
   id?: string;
   userId: string;
   name: string;
   foods: FoodItem[];
-  dayOfWeek: string; // 'Monday', 'Tuesday', etc.
+  timestamp?: any;
+}
+
+export interface DayAssignment {
+  mealId: string;
+  mealName: string;
   mealType: 'breakfast' | 'lunch' | 'dinner' | 'snack';
+}
+
+export interface MenuPlan {
+  id?: string;
+  userId: string;
+  name: string;
+  description?: string;
+  assignments: Record<string, DayAssignment[]>;
   timestamp?: any;
 }
 
