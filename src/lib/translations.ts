@@ -1,6 +1,14 @@
 
 export const translations: Record<string, any> = {
   bs: {
+    about: {
+      title: 'O Aplikaciji',
+      version: 'Verzija 3.01',
+      description: 'GlucoGuard je Vaš pametni saputnik u upravljanju dijabetesom. Pratite glukozu, planirajte obroke i dobijte pametne savjete na osnovu vaših podataka.',
+      contact: 'Kontakt Autora',
+      accept: 'Prihvatam i nastavljam',
+      developer: 'Razvio: Fuad Hasanović, mag. inf.',
+    },
     nav: {
       profile: 'Profil',
       glucose: 'Šećer',
@@ -94,6 +102,14 @@ export const translations: Record<string, any> = {
     }
   },
   en: {
+    about: {
+      title: 'About App',
+      version: 'Version 3.01',
+      description: 'GlucoGuard is your smart companion in diabetes management. Track glucose, plan meals and get smart advice based on your data.',
+      contact: 'Author Contact',
+      accept: 'I accept and continue',
+      developer: 'Developed by: Fuad Hasanović, mag. inf.',
+    },
     nav: {
       profile: 'Profile',
       glucose: 'Glucose',
@@ -172,6 +188,14 @@ export const translations: Record<string, any> = {
     }
   },
   de: {
+    about: {
+      title: 'Über die App',
+      version: 'Version 3.01',
+      description: 'GlucoGuard ist Ihr intelligenter Begleiter im Diabetes-Management. Verfolgen Sie Glukose, planen Sie Mahlzeiten und erhalten Sie intelligente Ratschläge basierend auf Ihren Daten.',
+      contact: 'Kontakt zum Autor',
+      accept: 'Akzeptieren und fortfahren',
+      developer: 'Entwickelt von: Fuad Hasanović, mag. inf.',
+    },
     nav: {
       profile: 'Profil',
       glucose: 'Zucker',
@@ -250,6 +274,14 @@ export const translations: Record<string, any> = {
     }
   },
   tr: {
+    about: {
+      title: 'Uygulama Hakkında',
+      version: 'Sürüm 3.01',
+      description: 'GlucoGuard, diyabet yönetiminde akıllı arkadaşınızdır. Glikozu takip edin, öğünleri planlayın ve verilerinize dayalı akıllı tavsiyeler alın.',
+      contact: 'Yazar İletişim',
+      accept: 'Kabul et ve devam et',
+      developer: 'Geliştiren: Fuad Hasanović, mag. inf.',
+    },
     nav: {
       profile: 'Profil',
       glucose: 'Şeker',

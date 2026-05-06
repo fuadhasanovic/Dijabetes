@@ -40,7 +40,7 @@ export default function Splash({ onComplete }: SplashProps) {
         transition={{ delay: 0.6 }}
         className="text-blue-100 font-medium tracking-widest uppercase text-xs"
       >
-        Version 1.0.0 • By Fuad Hasanović
+        Version 3.01 • By Fuad Hasanović, mag. inf.
       </motion.p>
 
       <motion.div 

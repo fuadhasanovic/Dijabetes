@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Shield, Menu, Globe } from 'lucide-react';
+import { Shield, Menu, Globe, X, LogOut, User, Settings } from 'lucide-react';
 import { auth } from './lib/firebase';
 import { signInWithPopup, GoogleAuthProvider } from 'firebase/auth';
 
@@ -21,7 +21,9 @@ type Tab = 'profile' | 'glucose' | 'meals' | 'activity' | 'advice';
 export default function App() {
   const [showSplash, setShowSplash] = useState(true);
   const [currentTab, setCurrentTab] = useState<Tab>('glucose');
+  const [acceptedTerms, setAcceptedTerms] = useState(() => localStorage.getItem('gluco_terms_accepted') === 'true');
   const [language, setLanguage] = useState('bs');
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const {
     user, authLoading, profile, measurements, foods, activities, savedMeals, menuPlans, actions
@@ -29,10 +31,23 @@ export default function App() {
 
   const t = translations[language] || translations.bs;
 
+  const handleAcceptTerms = () => {
+    localStorage.setItem('gluco_terms_accepted', 'true');
+    setAcceptedTerms(true);
+  };
+
   const handleSignIn = async () => {
     const provider = new GoogleAuthProvider();
-    try { await signInWithPopup(auth, provider); } 
-    catch (err) { console.error("Sign in error:", err); }
+    try { 
+      await signInWithPopup(auth, provider); 
+    } catch (err: any) { 
+      if (err.code === 'auth/popup-closed-by-user') {
+        // Silently ignore or show a gentle notice
+        console.log('Prijava zatvorena od strane korisnika');
+      } else {
+        console.error("Sign in error:", err); 
+      }
+    }
   };
 
   const handleLogout = () => {
@@ -42,6 +57,66 @@ export default function App() {
   };
 
   if (showSplash) return <Splash onComplete={() => setShowSplash(false)} />;
+
+  if (!acceptedTerms) {
+    return (
+      <div className="min-h-screen bg-slate-900 flex items-center justify-center p-6 text-white font-sans">
+        <motion.div 
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="max-w-md w-full space-y-8 text-center"
+        >
+          <div className="w-24 h-24 bg-blue-600 rounded-[2rem] mx-auto flex items-center justify-center shadow-2xl shadow-blue-500/20 rotate-12">
+            <Shield size={48} />
+          </div>
+          <div className="space-y-2">
+            <h1 className="text-4xl font-black tracking-tighter">GlucoGuard <span className="text-blue-500">3.01</span></h1>
+            <p className="text-slate-400 font-medium leading-relaxed">{t.about.description}</p>
+          </div>
+          
+          <div className="bg-slate-800/50 p-6 rounded-[2.5rem] border border-white/5 space-y-4 text-left">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-full bg-blue-500/20 flex items-center justify-center text-blue-400">
+                <Globe size={16} />
+              </div>
+              <p className="text-[10px] font-bold uppercase tracking-widest">{t.about.version}</p>
+            </div>
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-full bg-purple-500/20 flex items-center justify-center text-purple-400">
+                <Shield size={16} />
+              </div>
+              <p className="text-[10px] font-bold uppercase tracking-widest">Fuad Hasanović, mag. inf.</p>
+            </div>
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-full bg-green-500/20 flex items-center justify-center text-green-400">
+                <Globe size={16} />
+              </div>
+              <p className="text-[10px] font-bold uppercase tracking-widest">fhasanovic@gmail.com</p>
+            </div>
+          </div>
+
+          <div className="flex justify-center gap-3 py-4">
+            {SUPPORTED_LANGUAGES.map(lang => (
+              <button 
+                key={lang.code}
+                onClick={() => setLanguage(lang.code)}
+                className={`w-10 h-10 rounded-full flex items-center justify-center text-lg transition-all ${language === lang.code ? 'bg-blue-600 scale-125 shadow-lg shadow-blue-500/50' : 'bg-slate-800 hover:bg-slate-700'}`}
+              >
+                {FLAGS[lang.code]}
+              </button>
+            ))}
+          </div>
+
+          <button 
+            onClick={handleAcceptTerms}
+            className="w-full py-5 bg-white text-slate-900 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-blue-500 hover:text-white transition-all active:scale-95 shadow-xl"
+          >
+            {t.about.accept}
+          </button>
+        </motion.div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col items-center">
@@ -55,40 +130,132 @@ export default function App() {
             <div>
               <h1 className="font-black text-xl tracking-tighter leading-none flex items-baseline gap-1">
                 GlucoGuard
-                <span className="text-[9px] text-blue-600 font-black bg-blue-50 px-1.5 py-0.5 rounded-full">v2.1</span>
+                <span className="text-[9px] text-blue-600 font-black bg-blue-50 px-1.5 py-0.5 rounded-full">v3.01</span>
               </h1>
-              <p className="text-[11px] text-slate-500 font-serif italic mt-0.5">{profile?.name || (user ? 'Tarik Hasanović' : 'Lokalni Korisnik')}</p>
+              <p className="text-[11px] text-slate-500 font-serif italic mt-0.5">{profile?.name || (user ? 'Fuad Hasanović, mag. inf.' : 'Lokalni Korisnik')}</p>
             </div>
           </div>
 
-          <div className="flex gap-4 items-center">
-            {user ? (
-              <button onClick={handleLogout} className="text-[10px] font-black text-slate-400 hover:text-red-500 uppercase tracking-widest">Logout</button>
-            ) : (
-              <button onClick={handleSignIn} className="text-[10px] font-black text-blue-600 hover:text-blue-700 uppercase tracking-widest">Login</button>
-            )}
-            
-            <div className="relative group">
-              <div className="flex items-center gap-1 cursor-pointer p-1 rounded-lg hover:bg-slate-50">
-                <span className="text-xl">{FLAGS[language]}</span>
-                <Globe size={14} className="text-slate-400" />
-              </div>
-              <div className="absolute right-0 top-full mt-2 bg-white rounded-2xl shadow-2xl border border-slate-100 p-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50 min-w-[140px]">
-                {SUPPORTED_LANGUAGES.map(lang => (
-                  <button
-                    key={lang.code}
-                    onClick={() => setLanguage(lang.code)}
-                    className={`w-full flex items-center justify-between gap-3 px-3 py-2 rounded-xl text-[10px] font-bold uppercase tracking-widest ${language === lang.code ? 'bg-blue-50 text-blue-600' : 'text-slate-500 hover:bg-slate-50'}`}
-                  >
-                    <span>{FLAGS[lang.code]} {lang.name}</span>
-                    {language === lang.code && <div className="w-1.5 h-1.5 bg-blue-600 rounded-full" />}
-                  </button>
-                ))}
-              </div>
-            </div>
-            <button className="p-2 text-slate-400"><Menu size={24} /></button>
+          <div className="flex gap-2 items-center">
+            <button 
+              onClick={() => setIsMenuOpen(true)}
+              className="p-3 -mr-2 text-slate-500 hover:bg-slate-50 rounded-full active:scale-90 transition-transform"
+            >
+              <Menu size={28} />
+            </button>
           </div>
         </header>
+
+        {/* Side Menu Drawer */}
+        <AnimatePresence>
+          {isMenuOpen && (
+            <>
+              <motion.div 
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                onClick={() => setIsMenuOpen(false)}
+                className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[100]"
+              />
+              <motion.div 
+                initial={{ x: '100%' }}
+                animate={{ x: 0 }}
+                exit={{ x: '100%' }}
+                transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+                className="fixed top-0 right-0 bottom-0 w-[85%] max-w-sm bg-white z-[101] shadow-2xl flex flex-col"
+              >
+                <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-blue-600 text-white">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-white/20 rounded-xl">
+                      <Shield size={24} />
+                    </div>
+                    <span className="font-black tracking-tighter text-xl">GlucoGuard</span>
+                  </div>
+                  <button onClick={() => setIsMenuOpen(false)} className="p-2 hover:bg-white/10 rounded-full">
+                    <X size={24} />
+                  </button>
+                </div>
+
+                <div className="flex-1 overflow-y-auto p-6 space-y-8">
+                  {/* User Section */}
+                  <div className="space-y-4">
+                    <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">{t.nav.profile}</p>
+                    <div className="flex items-center gap-4 bg-slate-50 p-4 rounded-3xl">
+                      <div className="w-12 h-12 bg-blue-100 rounded-2xl flex items-center justify-center text-blue-600">
+                        <User size={24} />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-bold text-slate-900 truncate">{profile?.name || (user ? 'Fuad Hasanović, mag. inf.' : t.about.developer)}</p>
+                        <p className="text-[10px] text-slate-500 truncate">{user?.email || 'Local Mode'}</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Language Section */}
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-2">
+                      <Globe size={14} className="text-slate-400" />
+                      <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Jezik / Language</p>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      {SUPPORTED_LANGUAGES.map(lang => (
+                        <button
+                          key={lang.code}
+                          onClick={() => {
+                            setLanguage(lang.code);
+                            setIsMenuOpen(false);
+                          }}
+                          className={`flex items-center gap-2 px-4 py-3 rounded-2xl border transition-all ${
+                            language === lang.code 
+                            ? 'bg-blue-50 border-blue-200 text-blue-600' 
+                            : 'bg-white border-slate-100 text-slate-600 hover:border-slate-200'
+                          }`}
+                        >
+                          <span className="text-lg">{FLAGS[lang.code]}</span>
+                          <span className="text-[10px] font-bold uppercase truncate">{lang.name}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Quick Actions */}
+                  <div className="space-y-4">
+                    <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Postavke</p>
+                    <div className="space-y-2">
+                      {user ? (
+                        <button 
+                          onClick={handleLogout}
+                          className="w-full flex items-center gap-3 p-4 bg-red-50 text-red-600 rounded-2xl font-bold text-xs uppercase tracking-widest hover:bg-red-100 transition-colors"
+                        >
+                          <LogOut size={18} />
+                          <span>Odjavi se (Logout)</span>
+                        </button>
+                      ) : (
+                        <button 
+                          onClick={handleSignIn}
+                          className="w-full flex items-center gap-3 p-4 bg-blue-600 text-white rounded-2xl font-bold text-xs uppercase tracking-widest hover:bg-blue-700 transition-colors shadow-lg shadow-blue-100"
+                        >
+                          <User size={18} />
+                          <span>Prijavi se (Login)</span>
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="p-6 bg-slate-50 border-t border-slate-100">
+                  <div className="flex items-center justify-between text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                    <span>Verzija 3.01</span>
+                    <div className="flex items-center gap-1">
+                      <Settings size={12} />
+                      <span>Stable Build</span>
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+            </>
+          )}
+        </AnimatePresence>
 
         <main className="flex-1 overflow-y-auto px-6 py-8 pb-32">
           <AnimatePresence mode="wait">

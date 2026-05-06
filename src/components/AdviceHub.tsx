@@ -1,130 +1,185 @@
-import { Phone, HeartPulse, ShieldAlert, BookOpen, ExternalLink, Siren } from 'lucide-react';
+import React from 'react';
+import { 
+  Lightbulb, 
+  ChevronRight, 
+  Apple, 
+  Activity, 
+  Brain, 
+  Stethoscope, 
+  Mail,
+  AlertCircle,
+  ExternalLink,
+  ShieldCheck,
+  Zap,
+  Info
+} from 'lucide-react';
 import { motion } from 'motion/react';
 
 export default function AdviceHub() {
-  const emergencyNumbers = [
-    { name: 'Hitna Pomoć', number: '124', icon: <Siren />, color: 'bg-red-600' },
-    { name: 'Policija', number: '122', icon: <Phone />, color: 'bg-blue-600' },
-    { name: 'Vatrogasci', number: '123', icon: <Phone />, color: 'bg-orange-600' },
+  const emergencyProtocols = [
+    {
+      title: 'HIPOGLIKEMIJA (Nizak šećer < 3.9 mmol/L)',
+      importance: 'CRITICAL',
+      icon: <Zap className="text-orange-500" size={24} />,
+      bg: 'bg-orange-50 border-orange-200',
+      textColor: 'text-orange-900',
+      description: 'Simptomi: Drhtavica, znojenje, glad, vrtoglavica, zbunjenost.',
+      protocol: 'Pravilo 15-15:',
+      steps: [
+        '1. Uzmite 15g brzih šećera (npr. pola čaše soka, 3-4 kocke šećera ili tablete glukoze).',
+        '2. Sačekajte 15 minuta.',
+        '3. Ponovo izmjerite šećer.',
+        '4. Ako je i dalje ispod 3.9, ponovite postupak.',
+        '5. Kada se stabilizuje, pojedite obrok sa sporim ugljikohidratima.'
+      ],
+      link: 'https://www.diabetes.org/diabetes/hypoglycemia'
+    },
+    {
+      title: 'HIPERGLIKEMIJA (Visok šećer > 13.0 mmol/L)',
+      importance: 'URGENT',
+      icon: <AlertCircle className="text-red-500" size={24} />,
+      bg: 'bg-red-50 border-red-200',
+      textColor: 'text-red-900',
+      description: 'Simptomi: Velika žeđ, često mokrenje, zamagljen vid, umor.',
+      protocol: 'Šta uraditi:',
+      steps: [
+        '1. Pijte puno vode (bez šećera) da izbjegnete dehidraciju.',
+        '2. Provjerite ketone u urinu ako je šećer > 15.0 mmol/L.',
+        '3. Lagana fizička aktivnost (samo ako nema ketona!).',
+        '4. Provjerite da li ste uzeli propisanu dozu insulina/lijekova.',
+        '5. Kontaktirajte ljekara ako nivo ne opada ili osjetite mučninu.'
+      ],
+      link: 'https://www.diabetes.org/diabetes/hyperglycemia'
+    }
   ];
 
-  const medicalAdvices = [
+  const genericTips = [
     {
-      title: 'Hipoglikemija (Nizak šećer)',
-      condition: 'Vrijednost < 3.9 mmol/L',
-      symptoms: 'Znojenje, drhtavica, glad, vrtoglavica.',
-      action: 'Uzeti 15g brzodjelujućih ugljikohidrata (npr. čaša soka ili 3 tablete glukoze). Sačekati 15 minuta i ponovo izmjeriti.',
+      title: 'Ishrana (Medicinska preporuka)',
+      icon: <Apple className="text-blue-600" size={20} />,
+      items: [
+        'Konzumirajte hranu sa niskim glikemijskim indeksom (< 55).',
+        'Vlakna (povrće, mahunarke) usporavaju apsorpciju šećera.',
+        'Podijelite obroke u 5 manjih porcija tokom dana.'
+      ]
     },
     {
-      title: 'Hiperglikemija (Visok šećer)',
-      condition: 'Vrijednost > 7.0 mmol/L (na tašte)',
-      symptoms: 'Pojačana žeđ, učestalo mokrenje, umor.',
-      action: 'Pijte puno vode, izbjegavajte ugljikohidrate i provjerite ketone ako je nivo jako visok. Obratite se ljekaru ako se stanje nastavi.',
-    },
+      title: 'Fizička Aktivnost',
+      icon: <Activity className="text-blue-600" size={20} />,
+      items: [
+        'Šetnja od 15-30 minuta nakon glavnih obroka dramatično smanjuje skokove.',
+        'Konsultujte se sa ljekarom prije uvođenja intenzivnog treninga.'
+      ]
+    }
   ];
 
   return (
-    <div className="space-y-8">
-      <div className="mb-4">
-        <h2 className="text-2xl font-bold">Savjeti & Pomoć</h2>
-        <p className="text-slate-500 text-sm">Resursi za upravljanje dijabetesom</p>
+    <div className="space-y-8 pb-32">
+      <header className="space-y-2">
+        <div className="flex items-center gap-2">
+          <ShieldCheck className="text-blue-600" size={32} />
+          <h2 className="text-2xl font-black text-slate-900 tracking-tighter">Medicinski Savjetnik</h2>
+        </div>
+        <p className="text-slate-500 text-sm leading-relaxed border-l-2 border-blue-600 pl-4 py-1">
+          Personalizovani protokoli i preporuke za upravljanje dijabetesom. 
+          <br/>
+          <span className="text-[10px] font-black uppercase text-blue-600">Verzija 3.01 Stable</span>
+        </p>
+      </header>
+
+      {/* Emergency Section First */}
+      <div className="space-y-4">
+        <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest px-2">Hitni Protokoli</h3>
+        {emergencyProtocols.map((p, i) => (
+          <motion.div 
+            key={i}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: i * 0.1 }}
+            className={`p-6 rounded-[2.5rem] border ${p.bg} shadow-sm space-y-4`}
+          >
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <div className="p-3 bg-white rounded-2xl shadow-sm italic">
+                  {p.icon}
+                </div>
+                <h4 className={`font-black text-sm ${p.textColor} leading-tight`}>{p.title}</h4>
+              </div>
+              <a href={p.link} target="_blank" rel="noopener noreferrer" className="p-2 text-slate-400 hover:text-blue-600 transition-colors">
+                <ExternalLink size={18} />
+              </a>
+            </div>
+            
+            <p className="text-xs font-medium text-slate-700 italic">{p.description}</p>
+            
+            <div className="space-y-2 bg-white/50 p-4 rounded-2xl">
+              <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-2">{p.protocol}</p>
+              {p.steps.map((step, sIdx) => (
+                <p key={sIdx} className="text-xs text-slate-800 font-medium leading-relaxed">• {step}</p>
+              ))}
+            </div>
+          </motion.div>
+        ))}
       </div>
 
-      {/* Emergency Section */}
-      <section>
-        <div className="flex items-center gap-2 mb-4 px-2">
-          <ShieldAlert size={18} className="text-red-500" />
-          <h3 className="font-bold text-slate-800">Hitni Brojevi</h3>
-        </div>
-        <div className="grid grid-cols-1 gap-3">
-          {emergencyNumbers.map((item, idx) => (
-            <a 
-              key={idx} 
-              href={`tel:${item.number}`}
-              className="flex items-center justify-between p-4 bg-white border border-slate-100 rounded-2xl group active:scale-[0.98] transition-all"
-            >
-              <div className="flex items-center gap-4">
-                <div className={`w-12 h-12 ${item.color} rounded-xl flex items-center justify-center text-white`}>
-                  {item.icon}
-                </div>
-                <div>
-                  <p className="font-bold text-slate-900">{item.name}</p>
-                  <p className="text-lg font-black text-slate-400">{item.number}</p>
-                </div>
+      {/* Informational Tips */}
+      <div className="grid grid-cols-1 gap-4">
+        <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest px-2">Edukacija i Prevencija</h3>
+        {genericTips.map((tip, i) => (
+          <div key={i} className="p-6 bg-white border border-slate-100 rounded-[2.5rem] shadow-sm space-y-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-blue-50 rounded-xl">
+                {tip.icon}
               </div>
-              <Phone className="text-slate-200 group-hover:text-slate-900 transition-colors" size={24} />
-            </a>
-          ))}
-        </div>
-      </section>
+              <h4 className="font-bold text-slate-900 text-sm">{tip.title}</h4>
+            </div>
+            <ul className="space-y-2">
+              {tip.items.map((item, idx) => (
+                <li key={idx} className="text-xs text-slate-600 leading-relaxed flex gap-2">
+                  <span className="text-blue-500 font-bold">•</span>
+                  {item}
+                </li>
+              ))}
+            </ul>
+          </div>
+        ))}
+      </div>
 
-      {/* Medical Advice Cards */}
-      <section>
-        <div className="flex items-center gap-2 mb-4 px-2">
-          <HeartPulse size={18} className="text-blue-500" />
-          <h3 className="font-bold text-slate-800">Medicinski Vodič</h3>
+      {/* Developer and Support */}
+      <div className="p-8 bg-blue-600 text-white rounded-[3rem] shadow-xl space-y-6">
+        <div className="flex items-center gap-4">
+          <div className="w-16 h-16 bg-white/10 rounded-2xl flex items-center justify-center text-white backdrop-blur-md">
+            <Brain size={32} />
+          </div>
+          <div>
+            <h4 className="text-lg font-bold">Inovacije u Zdravstvu</h4>
+            <p className="text-blue-100 text-xs italic">Fuad Hasanović, magistar informatike</p>
+          </div>
         </div>
-        <div className="space-y-4">
-          {medicalAdvices.map((advice, idx) => (
-            <motion.div 
-              key={idx}
-              initial={{ x: 20, opacity: 0 }}
-              animate={{ x: 0, opacity: 1 }}
-              transition={{ delay: idx * 0.1 }}
-              className="p-6 bg-white border border-slate-100 rounded-3xl shadow-sm"
-            >
-              <div className="flex justify-between items-start mb-3">
-                <h4 className="font-black text-slate-900 text-lg leading-tight">{advice.title}</h4>
-                <div className="text-[10px] font-bold text-blue-600 bg-blue-50 px-2 py-1 rounded-full uppercase">
-                  {advice.condition}
-                </div>
-              </div>
-              <div className="space-y-4">
-                <div>
-                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Simptomi</p>
-                  <p className="text-sm text-slate-600 leading-relaxed">{advice.symptoms}</p>
-                </div>
-                <div className="p-4 bg-slate-50 rounded-2xl border-l-4 border-blue-500">
-                  <p className="text-[10px] font-bold text-blue-600 uppercase tracking-widest mb-1">Šta uraditi?</p>
-                  <p className="text-sm text-slate-700 font-medium leading-relaxed">{advice.action}</p>
-                </div>
-              </div>
-            </motion.div>
-          ))}
-        </div>
-      </section>
 
-      {/* External Resources */}
-      <section>
-        <div className="flex items-center gap-2 mb-4 px-2">
-          <BookOpen size={18} className="text-purple-500" />
-          <h3 className="font-bold text-slate-800">Korisni Linkovi</h3>
+        <div className="bg-white/10 backdrop-blur-md rounded-2xl p-4 space-y-3">
+          <p className="text-xs leading-relaxed opacity-90">
+            Aplikacija je kreirana sa ciljem da pruži brzu i preciznu pomoć pacijentima. 
+            Svi savjeti su bazirani na međunarodnim dijabetološkim standardima (ADA Protokoli).
+          </p>
+          <div className="h-px bg-white/20 w-full" />
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Mail size={14} className="opacity-70" />
+              <span className="text-[10px] font-black uppercase">fhasanovic@gmail.com</span>
+            </div>
+            <a href="https://www.diabetes.org" target="_blank" rel="noopener noreferrer" className="text-[10px] font-black underline uppercase tracking-widest">Više informacija</a>
+          </div>
         </div>
-        <div className="space-y-2">
-          <ResourceLink title="Dijabetes.ba Portal" url="https://dijabetes.ba" />
-          <ResourceLink title="Internacionalna Federacija Dijabetesa" url="https://idf.org" />
-        </div>
-      </section>
+      </div>
 
-      <div className="p-6 bg-blue-50 rounded-3xl text-center">
-        <p className="text-[10px] text-blue-400 leading-relaxed uppercase font-bold opacity-70">
-          Uvijek se konsultujte sa svojim lekarom pre donošenja bilo kakve medicinske odluke.
+      <div className="flex items-center gap-2 justify-center p-6 text-slate-400 bg-slate-50 rounded-3xl border border-slate-100">
+        <Info size={16} />
+        <p className="text-[10px] font-bold uppercase tracking-tight text-center">
+          Ova aplikacija nije zamjena za medicinski savjet. 
+          Uvijek se konsultujte sa svojim endokrinologom.
         </p>
       </div>
     </div>
-  );
-}
-
-function ResourceLink({ title, url }: { title: string, url: string }) {
-  return (
-    <a 
-      href={url} 
-      target="_blank" 
-      rel="noopener noreferrer"
-      className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl hover:bg-slate-100 transition-colors group"
-    >
-      <span className="font-bold text-slate-700 text-sm">{title}</span>
-      <ExternalLink size={16} className="text-slate-300 group-hover:text-slate-900 transition-colors" />
-    </a>
   );
 }
