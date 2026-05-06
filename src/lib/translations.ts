@@ -69,7 +69,12 @@ export const translations: Record<string, any> = {
         normal: 'Odlično! Vaš BMI je u granicama normale.',
         overweight: 'Preporuka: Razmislite o umjerenoj fizičkoj aktivnosti.',
         obese: 'Važno: Konsultujte se sa ljekarom o planu za smanjenje težine.'
-      }
+      },
+      backup: 'Sigurnosna kopija',
+      export: 'Izvezi podatke (Backup)',
+      import: 'Uvezi podatke (Restore)',
+      importSuccess: 'Podaci uspješno uvezeni!',
+      exportDetail: 'Sačuvajte vaše podatke lokalno u JSON fajl.'
     },
     activity: {
       title: 'Aktivnosti',

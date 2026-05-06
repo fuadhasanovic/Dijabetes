@@ -62,6 +62,47 @@ export default function App() {
 
   const t = translations[language] || translations.bs;
 
+  // Persistence to LocalStorage
+  useEffect(() => {
+    const localProfile = localStorage.getItem('gluco_profile');
+    const localMeas = localStorage.getItem('gluco_measurements');
+    const localFoods = localStorage.getItem('gluco_foods');
+    const localAct = localStorage.getItem('gluco_activities');
+    const localMeals = localStorage.getItem('gluco_savedMeals');
+    const localPlans = localStorage.getItem('gluco_menuPlans');
+
+    if (localProfile) setProfile(JSON.parse(localProfile));
+    if (localMeas) setMeasurements(JSON.parse(localMeas).map((m: any) => ({ ...m, timestamp: m.timestamp })));
+    if (localFoods) setFoods(JSON.parse(localFoods));
+    if (localAct) setActivities(JSON.parse(localAct).map((a: any) => ({ ...a, timestamp: a.timestamp })));
+    if (localMeals) setSavedMeals(JSON.parse(localMeals));
+    if (localPlans) setMenuPlans(JSON.parse(localPlans));
+  }, []);
+
+  useEffect(() => {
+    if (profile) localStorage.setItem('gluco_profile', JSON.stringify(profile));
+  }, [profile]);
+
+  useEffect(() => {
+    localStorage.setItem('gluco_measurements', JSON.stringify(measurements));
+  }, [measurements]);
+
+  useEffect(() => {
+    localStorage.setItem('gluco_foods', JSON.stringify(foods));
+  }, [foods]);
+
+  useEffect(() => {
+    localStorage.setItem('gluco_activities', JSON.stringify(activities));
+  }, [activities]);
+
+  useEffect(() => {
+    localStorage.setItem('gluco_savedMeals', JSON.stringify(savedMeals));
+  }, [savedMeals]);
+
+  useEffect(() => {
+    localStorage.setItem('gluco_menuPlans', JSON.stringify(menuPlans));
+  }, [menuPlans]);
+
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, (u) => {
       setUser(u);
@@ -72,167 +113,167 @@ export default function App() {
 
   useEffect(() => {
     if (!user) return;
-
-    const pathProfile = `userProfiles/${user.uid}`;
+    
+    // Sync with Firebase if user is logged in
     const profUnsub = onSnapshot(doc(db, 'userProfiles', user.uid), (doc) => {
       if (doc.exists()) {
-        setProfile({ id: doc.id, ...doc.data() } as UserProfile);
-      } else {
-        setCurrentTab('profile');
+        const cloudProfile = { id: doc.id, ...doc.data() } as UserProfile;
+        setProfile(cloudProfile);
       }
-    }, (err) => handleFirestoreError(err, OperationType.GET, pathProfile));
+    });
 
-    const pathMeas = 'glucoseMeasurements';
-    const measQuery = query(
-      collection(db, pathMeas), 
-      where('userId', '==', user.uid)
-      // Removed orderBy to avoid multi-field index requirement during dev
-    );
+    const measQuery = query(collection(db, 'glucoseMeasurements'), where('userId', '==', user.uid));
     const measUnsub = onSnapshot(measQuery, (snap) => {
-      const data = snap.docs.map(d => ({ id: d.id, ...d.data() } as GlucoseMeasurement));
-      // Sort in memory using safe toDate
-      setMeasurements(data.sort((a, b) => toDate(a.timestamp).getTime() - toDate(b.timestamp).getTime()));
-    }, (err) => handleFirestoreError(err, OperationType.LIST, pathMeas));
+      if (snap.docs.length > 0) {
+        const data = snap.docs.map(d => ({ id: d.id, ...d.data() } as GlucoseMeasurement));
+        setMeasurements(data.sort((a, b) => toDate(a.timestamp).getTime() - toDate(b.timestamp).getTime()));
+      }
+    });
 
-    const pathFood = 'foodDatabase';
-    // Strict query to match security rules for foodDatabase
-    const foodQuery = query(
-      collection(db, pathFood),
-      where('userId', 'in', [null, user.uid])
-    );
+    const foodQuery = query(collection(db, 'foodDatabase'), where('userId', 'in', [null, user.uid]));
     const foodUnsub = onSnapshot(foodQuery, (snap) => {
-      setFoods(snap.docs.map(d => ({ id: d.id, ...d.data() } as FoodItem)));
-    }, (err) => handleFirestoreError(err, OperationType.LIST, pathFood));
-
-    const pathAct = 'activities';
-    const actQuery = query(
-      collection(db, pathAct),
-      where('userId', '==', user.uid)
-    );
-    const actUnsub = onSnapshot(actQuery, (snap) => {
-      const data = snap.docs.map(d => ({ id: d.id, ...d.data() } as ActivityLog));
-      setActivities(data.sort((a, b) => toDate(a.timestamp).getTime() - toDate(b.timestamp).getTime()));
-    }, (err) => handleFirestoreError(err, OperationType.LIST, pathAct));
-
-    const pathSavedMeals = 'savedMeals';
-    const savedMealsQuery = query(
-      collection(db, pathSavedMeals),
-      where('userId', '==', user.uid)
-    );
-    const savedMealsUnsub = onSnapshot(savedMealsQuery, (snap) => {
-      setSavedMeals(snap.docs.map(d => ({ id: d.id, ...d.data() } as SavedMeal)));
-    }, (err) => handleFirestoreError(err, OperationType.LIST, pathSavedMeals));
-
-    const pathMenuPlans = 'menuPlans';
-    const menuPlansQuery = query(
-      collection(db, pathMenuPlans),
-      where('userId', '==', user.uid)
-    );
-    const menuPlansUnsub = onSnapshot(menuPlansQuery, (snap) => {
-      setMenuPlans(snap.docs.map(d => ({ id: d.id, ...d.data() } as MenuPlan)));
-    }, (err) => handleFirestoreError(err, OperationType.LIST, pathMenuPlans));
+      if (snap.docs.length > 0) {
+        setFoods(snap.docs.map(d => ({ id: d.id, ...d.data() } as FoodItem)));
+      }
+    });
 
     return () => {
       profUnsub();
       measUnsub();
       foodUnsub();
-      actUnsub();
-      savedMealsUnsub();
-      menuPlansUnsub();
     };
   }, [user]);
 
   const handleSaveProfile = async (data: Partial<UserProfile>) => {
-    if (!user) return;
-    const path = `userProfiles/${user.uid}`;
-    try {
-      await setDoc(doc(db, 'userProfiles', user.uid), {
-        ...data,
-        userId: user.uid,
-        createdAt: serverTimestamp(),
-      });
-      setCurrentTab('glucose');
-    } catch (err) {
-      handleFirestoreError(err, OperationType.WRITE, path);
+    const updated = profile ? { ...profile, ...data } : { ...data, userId: user?.uid || 'local' } as UserProfile;
+    setProfile(updated);
+    
+    if (user) {
+      try {
+        await setDoc(doc(db, 'userProfiles', user.uid), {
+          ...data,
+          userId: user.uid,
+          updatedAt: serverTimestamp(),
+        }, { merge: true });
+      } catch (err) {
+        console.error(err);
+      }
     }
   };
 
   const handleAddMeasurement = async (data: Omit<GlucoseMeasurement, 'id'>) => {
-    if (!user) return;
-    const path = 'glucoseMeasurements';
-    try {
-      await addDoc(collection(db, path), {
-        ...data,
-        userId: user.uid,
-        timestamp: serverTimestamp(),
-      });
-    } catch (err) {
-      handleFirestoreError(err, OperationType.WRITE, path);
+    const localId = Date.now().toString();
+    const newDoc = { ...data, id: localId, timestamp: new Date().toISOString() };
+    setMeasurements(prev => [...prev, newDoc as GlucoseMeasurement]);
+
+    if (user) {
+      try {
+        await addDoc(collection(db, 'glucoseMeasurements'), {
+          ...data,
+          userId: user.uid,
+          timestamp: serverTimestamp(),
+        });
+      } catch (err) {
+        console.error(err);
+      }
     }
   };
 
   const handleAddFood = async (data: Omit<FoodItem, 'id'>) => {
-    if (!user) return;
-    const path = 'foodDatabase';
-    try {
-      await addDoc(collection(db, path), {
-        ...data,
-        userId: user.uid,
-      });
-    } catch (err) {
-      handleFirestoreError(err, OperationType.WRITE, path);
+    const localId = Date.now().toString();
+    const newDoc = { ...data, id: localId };
+    setFoods(prev => [...prev, newDoc as FoodItem]);
+
+    if (user) {
+      try {
+        await addDoc(collection(db, 'foodDatabase'), {
+          ...data,
+          userId: user.uid,
+        });
+      } catch (err) {
+        console.error(err);
+      }
     }
   };
 
   const handleAddActivity = async (data: Omit<ActivityLog, 'id'>) => {
-    if (!user) return;
-    const path = 'activities';
-    try {
-      await addDoc(collection(db, path), {
-        ...data,
-        userId: user.uid,
-        timestamp: serverTimestamp(),
-      });
-    } catch (err) {
-      handleFirestoreError(err, OperationType.WRITE, path);
+    const localId = Date.now().toString();
+    const newDoc = { ...data, id: localId, timestamp: new Date().toISOString() };
+    setActivities(prev => [...prev, newDoc as ActivityLog]);
+
+    if (user) {
+      try {
+        await addDoc(collection(db, 'activities'), {
+          ...data,
+          userId: user.uid,
+          timestamp: serverTimestamp(),
+        });
+      } catch (err) {
+        console.error(err);
+      }
     }
   };
 
   const handleAddSavedMeal = async (data: Omit<SavedMeal, 'id'>) => {
-    if (!user) return;
-    const path = 'savedMeals';
-    try {
-      await addDoc(collection(db, path), {
-        ...data,
-        userId: user.uid,
-        timestamp: serverTimestamp(),
-      });
-    } catch (err) {
-      handleFirestoreError(err, OperationType.WRITE, path);
+    const localId = Date.now().toString();
+    const newDoc = { ...data, id: localId, timestamp: new Date().toISOString() };
+    setSavedMeals(prev => [...prev, newDoc as SavedMeal]);
+
+    if (user) {
+      try {
+        await addDoc(collection(db, 'savedMeals'), {
+          ...data,
+          userId: user.uid,
+          timestamp: serverTimestamp(),
+        });
+      } catch (err) {
+        console.error(err);
+      }
     }
   };
 
   const handleAddMenuPlan = async (data: Omit<MenuPlan, 'id'>) => {
-    if (!user) return;
-    const path = 'menuPlans';
-    try {
-      await addDoc(collection(db, path), {
-        ...data,
-        userId: user.uid,
-        timestamp: serverTimestamp(),
-      });
-    } catch (err) {
-      handleFirestoreError(err, OperationType.WRITE, path);
+    const localId = Date.now().toString();
+    const newDoc = { ...data, id: localId, timestamp: new Date().toISOString() };
+    setMenuPlans(prev => [...prev, newDoc as MenuPlan]);
+
+    if (user) {
+      try {
+        await addDoc(collection(db, 'menuPlans'), {
+          ...data,
+          userId: user.uid,
+          timestamp: serverTimestamp(),
+        });
+      } catch (err) {
+        console.error(err);
+      }
     }
   };
 
   const handleDeleteDoc = async (collectionName: string, id: string) => {
-    const path = `${collectionName}/${id}`;
-    try {
-      await deleteDoc(doc(db, collectionName, id));
-    } catch (err) {
-      handleFirestoreError(err, OperationType.WRITE, path);
+    // Local Update
+    if (collectionName === 'glucoseMeasurements') setMeasurements(prev => prev.filter(i => i.id !== id));
+    if (collectionName === 'foodDatabase') setFoods(prev => prev.filter(i => i.id !== id));
+    if (collectionName === 'activities') setActivities(prev => prev.filter(i => i.id !== id));
+    if (collectionName === 'savedMeals') setSavedMeals(prev => prev.filter(i => i.id !== id));
+    if (collectionName === 'menuPlans') setMenuPlans(prev => prev.filter(i => i.id !== id));
+
+    if (user) {
+      try {
+        await deleteDoc(doc(db, collectionName, id));
+      } catch (err) {
+        console.error(err);
+      }
     }
+  };
+
+  const handleImportData = (data: any) => {
+    if (data.profile) setProfile(data.profile);
+    if (data.measurements) setMeasurements(data.measurements);
+    if (data.foods) setFoods(data.foods);
+    if (data.activities) setActivities(data.activities);
+    if (data.savedMeals) setSavedMeals(data.savedMeals);
+    if (data.menuPlans) setMenuPlans(data.menuPlans);
   };
 
   const handleSignIn = async () => {
@@ -246,34 +287,11 @@ export default function App() {
 
   if (showSplash) return <Splash onComplete={() => setShowSplash(false)} />;
 
-  if (!user && !authLoading) {
-    return (
-      <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-6">
-        <div className="w-full max-w-md bg-white rounded-3xl shadow-2xl p-8 text-center space-y-8">
-          <div className="w-20 h-20 bg-blue-600 rounded-3xl mx-auto flex items-center justify-center text-white shadow-xl shadow-blue-100">
-            <Shield size={40} />
-          </div>
-          <div>
-            <h1 className="text-3xl font-black tracking-tight text-slate-900">GlucoGuard</h1>
-            <p className="text-slate-500 mt-2">Vaš pametni asistent za dijabetes</p>
-          </div>
-          
-          <div className="space-y-4">
-            <button 
-              onClick={handleSignIn}
-              className="w-full flex items-center justify-center gap-3 bg-white border border-slate-200 py-4 rounded-2xl font-bold text-slate-700 hover:bg-slate-50 active:scale-[0.98] transition-all shadow-sm"
-            >
-              <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" className="w-6 h-6" />
-              Prijavi se putem Google-a
-            </button>
-            <p className="text-[10px] text-slate-400 leading-relaxed uppercase font-bold tracking-widest">
-              Vaši podaci su sigurni i dostupni na svim uređajima
-            </p>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  const handleLogout = () => {
+    auth.signOut();
+    localStorage.clear();
+    window.location.reload();
+  };
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col items-center">
@@ -286,10 +304,25 @@ export default function App() {
             </div>
             <div>
               <h1 className="font-black text-xl tracking-tighter leading-none">GlucoGuard</h1>
-              <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">{profile?.name || 'Korisnik'}</p>
+              <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">{profile?.name || (user ? 'Cloud User' : 'Local User')}</p>
             </div>
           </div>
           <div className="flex gap-4 items-center">
+            {user ? (
+              <button 
+                onClick={handleLogout}
+                className="text-[10px] font-black text-slate-400 hover:text-red-500 transition-colors uppercase tracking-widest"
+              >
+                Logout
+              </button>
+            ) : (
+              <button 
+                onClick={handleSignIn}
+                className="text-[10px] font-black text-blue-600 hover:text-blue-700 transition-colors uppercase tracking-widest"
+              >
+                Login
+              </button>
+            )}
             <div className="relative group">
               <div className="flex items-center gap-1 cursor-pointer p-1 rounded-lg hover:bg-slate-50 transition-colors">
                 <span className="text-xl">{FLAGS[language]}</span>
@@ -328,7 +361,22 @@ export default function App() {
                 exit={{ opacity: 0, x: -10 }}
                 transition={{ duration: 0.2 }}
               >
-                {currentTab === 'profile' && <ProfileForm initialData={profile} onSave={handleSaveProfile} translations={t.profile} />}
+                {currentTab === 'profile' && (
+                  <ProfileForm 
+                    initialData={profile} 
+                    onSave={handleSaveProfile} 
+                    translations={t.profile} 
+                    fullData={{
+                      profile,
+                      measurements,
+                      foods,
+                      activities,
+                      savedMeals,
+                      menuPlans
+                    }}
+                    onImport={handleImportData}
+                  />
+                )}
                 {currentTab === 'glucose' && (
                   <GlucoseDash 
                     measurements={measurements} 
