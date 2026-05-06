@@ -62,51 +62,45 @@ export default function App() {
 
   const t = translations[language] || translations.bs;
 
-  // Persistence to LocalStorage
+  // Persistence to LocalStorage (Consolidated)
   useEffect(() => {
-    const localProfile = localStorage.getItem('gluco_profile');
-    const localMeas = localStorage.getItem('gluco_measurements');
-    const localFoods = localStorage.getItem('gluco_foods');
-    const localAct = localStorage.getItem('gluco_activities');
-    const localMeals = localStorage.getItem('gluco_savedMeals');
-    const localPlans = localStorage.getItem('gluco_menuPlans');
+    const data = {
+      profile: localStorage.getItem('gluco_profile'),
+      measurements: localStorage.getItem('gluco_measurements'),
+      foods: localStorage.getItem('gluco_foods'),
+      activities: localStorage.getItem('gluco_activities'),
+      savedMeals: localStorage.getItem('gluco_savedMeals'),
+      menuPlans: localStorage.getItem('gluco_menuPlans'),
+    };
 
-    if (localProfile) setProfile(JSON.parse(localProfile));
-    if (localMeas) setMeasurements(JSON.parse(localMeas).map((m: any) => ({ ...m, timestamp: m.timestamp })));
-    if (localFoods) setFoods(JSON.parse(localFoods));
-    if (localAct) setActivities(JSON.parse(localAct).map((a: any) => ({ ...a, timestamp: a.timestamp })));
-    if (localMeals) setSavedMeals(JSON.parse(localMeals));
-    if (localPlans) setMenuPlans(JSON.parse(localPlans));
+    if (data.profile) setProfile(JSON.parse(data.profile));
+    if (data.measurements) setMeasurements(JSON.parse(data.measurements));
+    if (data.foods) setFoods(JSON.parse(data.foods));
+    if (data.activities) setActivities(JSON.parse(data.activities));
+    if (data.savedMeals) setSavedMeals(JSON.parse(data.savedMeals));
+    if (data.menuPlans) setMenuPlans(JSON.parse(data.menuPlans));
+    
+    setAuthLoading(false);
   }, []);
 
+  // Optimized Sync to LocalStorage
   useEffect(() => {
-    if (profile) localStorage.setItem('gluco_profile', JSON.stringify(profile));
-  }, [profile]);
-
-  useEffect(() => {
-    localStorage.setItem('gluco_measurements', JSON.stringify(measurements));
-  }, [measurements]);
-
-  useEffect(() => {
-    localStorage.setItem('gluco_foods', JSON.stringify(foods));
-  }, [foods]);
-
-  useEffect(() => {
-    localStorage.setItem('gluco_activities', JSON.stringify(activities));
-  }, [activities]);
-
-  useEffect(() => {
-    localStorage.setItem('gluco_savedMeals', JSON.stringify(savedMeals));
-  }, [savedMeals]);
-
-  useEffect(() => {
-    localStorage.setItem('gluco_menuPlans', JSON.stringify(menuPlans));
-  }, [menuPlans]);
+    const sync = () => {
+      if (profile) localStorage.setItem('gluco_profile', JSON.stringify(profile));
+      localStorage.setItem('gluco_measurements', JSON.stringify(measurements));
+      localStorage.setItem('gluco_foods', JSON.stringify(foods));
+      localStorage.setItem('gluco_activities', JSON.stringify(activities));
+      localStorage.setItem('gluco_savedMeals', JSON.stringify(savedMeals));
+      localStorage.setItem('gluco_menuPlans', JSON.stringify(menuPlans));
+    };
+    
+    const timeout = setTimeout(sync, 1000); // Debounce storage updates
+    return () => clearTimeout(timeout);
+  }, [profile, measurements, foods, activities, savedMeals, menuPlans]);
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, (u) => {
       setUser(u);
-      setAuthLoading(false);
     });
     return unsub;
   }, []);
