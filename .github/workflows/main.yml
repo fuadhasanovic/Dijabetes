@@ -29,8 +29,8 @@ jobs:
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
         with:
-          gradle-version: 8.12
-          cache-disabled: false # Promijenite u true ako GitHub i dalje javlja greške sa cache-om
+          gradle-version: 8.13
+          cache-disabled: false
 
       - name: Install Dependencies
         run: npm install
@@ -41,8 +41,8 @@ jobs:
       - name: Capacitor Sync
         run: |
           npx cap sync android
-          # Osigurajmo da Capacitor nije ponovo kreirao wrapper fajlove koji mogu uzrokovati greske validacije
-          rm -f android/gradlew android/gradlew.bat android/gradle/wrapper/gradle-wrapper.jar
+          # Potpuno brisanje svih wrapper fajlova kako bismo koristili isključivo sistemski Gradle 8.13
+          rm -rf android/gradlew android/gradlew.bat android/gradle/wrapper
 
       - name: Build Android APK
         run: |
