@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { User, Ruler, Weight, Info, Save } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { User, Ruler, Weight, Info, Save, Download, Upload, ShieldCheck } from 'lucide-react';
 import { motion } from 'motion/react';
 import { UserProfile } from '../types';
 
@@ -7,9 +7,12 @@ interface ProfileFormProps {
   initialData?: UserProfile | null;
   onSave: (data: Partial<UserProfile>) => void;
   translations: any;
+  fullData?: any;
+  onImport?: (data: any) => void;
 }
 
-export default function ProfileForm({ initialData, onSave, translations: t }: ProfileFormProps) {
+export default function ProfileForm({ initialData, onSave, translations: t, fullData, onImport }: ProfileFormProps) {
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [formData, setFormData] = useState({
     name: initialData?.name || '',
     age: initialData?.age || 0,
@@ -56,6 +59,40 @@ export default function ProfileForm({ initialData, onSave, translations: t }: Pr
         bmiCategory: bmiResult.category,
       });
     }
+  };
+
+  const handleExport = () => {
+    if (!fullData) return;
+    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(fullData));
+    const downloadAnchorNode = document.createElement('a');
+    downloadAnchorNode.setAttribute("href", dataStr);
+    downloadAnchorNode.setAttribute("download", `gluco_guard_backup_${new Date().toISOString().split('T')[0]}.json`);
+    document.body.appendChild(downloadAnchorNode);
+    downloadAnchorNode.click();
+    downloadAnchorNode.remove();
+  };
+
+  const handleImportClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      try {
+        const json = JSON.parse(event.target?.result as string);
+        if (onImport) {
+          onImport(json);
+          alert(t.importSuccess || 'Podaci uvezeni!');
+        }
+      } catch (err) {
+        alert('Neispravan fajl!');
+      }
+    };
+    reader.readAsText(file);
   };
 
   return (
@@ -143,12 +180,49 @@ export default function ProfileForm({ initialData, onSave, translations: t }: Pr
 
         <button
           type="submit"
-          className="w-full bg-blue-600 text-white py-4 rounded-2xl font-bold flex items-center justify-center gap-2 hover:bg-blue-700 active:scale-[0.98] transition-all shadow-lg mt-6"
+          className="w-full bg-blue-600 text-white py-4 rounded-2xl font-bold flex items-center justify-center gap-2 hover:bg-blue-700 active:scale-[0.98] transition-all shadow-lg"
         >
           <Save size={20} />
           {t.saveProfile}
         </button>
       </form>
+
+      <div className="pt-6 border-t border-slate-100 space-y-4">
+        <div className="flex items-center gap-2 mb-2">
+          <ShieldCheck size={18} className="text-green-500" />
+          <h3 className="font-bold text-sm text-slate-800">{t.backup || 'Sigurnosna kopija'}</h3>
+        </div>
+        <p className="text-xs text-slate-500 mb-4">{t.exportDetail || 'Sačuvajte vaše podatke lokalno u JSON fajl.'}</p>
+        
+        <div className="grid grid-cols-2 gap-3">
+          <button 
+            onClick={handleExport}
+            className="p-4 bg-slate-50 rounded-2xl flex flex-col items-center gap-2 hover:bg-slate-100 transition-all group"
+          >
+            <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center text-blue-600 shadow-sm border border-slate-100 group-hover:scale-110 transition-transform">
+              <Download size={20} />
+            </div>
+            <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">{t.export || 'Izvezi'}</span>
+          </button>
+
+          <button 
+            onClick={handleImportClick}
+            className="p-4 bg-slate-50 rounded-2xl flex flex-col items-center gap-2 hover:bg-slate-100 transition-all group"
+          >
+            <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center text-orange-600 shadow-sm border border-slate-100 group-hover:scale-110 transition-transform">
+              <Upload size={20} />
+            </div>
+            <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">{t.import || 'Uvezi'}</span>
+          </button>
+        </div>
+        <input 
+          type="file" 
+          ref={fileInputRef} 
+          onChange={handleFileChange} 
+          accept=".json" 
+          className="hidden" 
+        />
+      </div>
     </div>
   );
 }
