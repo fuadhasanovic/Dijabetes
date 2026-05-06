@@ -36,7 +36,7 @@ export interface UserProfile {
 
 export interface GlucoseMeasurement {
   id?: string;
-  userId: string;
+  userId?: string;
   level: number;
   context: GlucoseContext;
   timestamp: string;
@@ -53,7 +53,7 @@ export interface FoodItem {
 
 export interface ActivityLog {
   id?: string;
-  userId: string;
+  userId?: string;
   type: ActivityType;
   duration: number;
   intensity: 'low' | 'medium' | 'high';
@@ -63,7 +63,7 @@ export interface ActivityLog {
 
 export interface SavedMeal {
   id?: string;
-  userId: string;
+  userId?: string;
   name: string;
   foods: FoodItem[];
   timestamp?: any;
@@ -77,7 +77,7 @@ export interface DayAssignment {
 
 export interface MenuPlan {
   id?: string;
-  userId: string;
+  userId?: string;
   name: string;
   description?: string;
   assignments: Record<string, DayAssignment[]>;
