@@ -23,6 +23,14 @@ export enum ActivityType {
   OTHER = 'other',
 }
 
+export enum MealType {
+  BREAKFAST = 'breakfast',
+  SNACK = 'snack',
+  LUNCH = 'lunch',
+  APPETIZER = 'appetizer',
+  DINNER = 'dinner',
+}
+
 export interface UserProfile {
   id: string;
   name: string;
@@ -66,13 +74,15 @@ export interface SavedMeal {
   userId?: string;
   name: string;
   foods: FoodItem[];
+  type: MealType;
+  totalGI: number;
   timestamp?: any;
 }
 
 export interface DayAssignment {
   mealId: string;
   mealName: string;
-  mealType: 'breakfast' | 'lunch' | 'dinner' | 'snack';
+  mealType: MealType;
 }
 
 export interface MenuPlan {

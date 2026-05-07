@@ -11,7 +11,9 @@ import {
   ExternalLink,
   ShieldCheck,
   Zap,
-  Info
+  Info,
+  PhoneCall,
+  ShieldAlert
 } from 'lucide-react';
 import { motion } from 'motion/react';
 
@@ -83,9 +85,60 @@ export default function AdviceHub() {
         <p className="text-slate-500 text-sm leading-relaxed border-l-2 border-blue-600 pl-4 py-1">
           Personalizovani protokoli i preporuke za upravljanje dijabetesom. 
           <br/>
-          <span className="text-[10px] font-black uppercase text-blue-600">Verzija 3.01 Stable</span>
+          <span className="text-[10px] font-black uppercase text-blue-600">Verzija 3.2 Stable</span>
         </p>
       </header>
+
+      {/* Emergency Contacts Section */}
+      <div className="grid grid-cols-2 gap-4">
+        <motion.a 
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
+          href="tel:124"
+          className="p-6 bg-red-600 text-white rounded-[2.5rem] shadow-xl flex flex-col items-center justify-center gap-2 relative overflow-hidden group"
+        >
+          <div className="relative z-10 flex flex-col items-center">
+            <div className="p-3 bg-white/20 rounded-2xl mb-1 group-hover:scale-110 transition-transform">
+              <PhoneCall size={24} />
+            </div>
+            <p className="text-[10px] font-black uppercase tracking-widest opacity-80" id="hitna-pomoc-label">Hitna Pomoć</p>
+            <p className="text-3xl font-black" id="hitna-pomoc-number">124</p>
+          </div>
+          <div className="absolute top-0 right-0 w-24 h-24 bg-white/10 rounded-full -mr-12 -mt-12 blur-2xl" id="hitna-bg-glow" />
+        </motion.a>
+        
+        <div className="grid grid-rows-2 gap-3" id="secondary-emergency-grid">
+          <motion.a 
+            whileHover={{ x: 5 }}
+            href="tel:122"
+            className="flex items-center gap-4 p-4 bg-slate-900 text-white rounded-[1.8rem] shadow-lg border border-white/5"
+            id="policija-btn"
+          >
+            <div className="p-2.5 bg-white/10 rounded-xl text-blue-400">
+              <ShieldAlert size={18} />
+            </div>
+            <div>
+              <p className="text-[9px] font-black uppercase tracking-[0.2em] opacity-40">Policija</p>
+              <p className="text-lg font-black tracking-tight">122</p>
+            </div>
+          </motion.a>
+          
+          <motion.a 
+            whileHover={{ x: 5 }}
+            href="tel:123"
+            className="flex items-center gap-4 p-4 bg-orange-600 text-white rounded-[1.8rem] shadow-lg border border-white/5"
+            id="vatrogasci-btn"
+          >
+            <div className="p-2.5 bg-white/10 rounded-xl text-orange-200">
+              <Zap size={18} />
+            </div>
+            <div>
+              <p className="text-[9px] font-black uppercase tracking-[0.2em] opacity-40">Vatrogasci</p>
+              <p className="text-lg font-black tracking-tight">123</p>
+            </div>
+          </motion.a>
+        </div>
+      </div>
 
       {/* Emergency Section First */}
       <div className="space-y-4">
@@ -153,7 +206,7 @@ export default function AdviceHub() {
           </div>
           <div>
             <h4 className="text-lg font-bold">Inovacije u Zdravstvu</h4>
-            <p className="text-blue-100 text-xs italic">Fuad Hasanović, magistar informatike</p>
+            <p className="text-blue-100 text-xs italic">Fuad Hasanović, dipl.ing.informatike</p>
           </div>
         </div>
 

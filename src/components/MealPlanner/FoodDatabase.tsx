@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
-import { Search, Plus, Trash2 } from 'lucide-react';
-import { motion } from 'motion/react';
+import React, { useState, useRef } from 'react';
+import { Search, Plus, Trash2, Upload, FileJson, FileType } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
 import { FoodItem, GICategory } from '../../types';
 
 interface FoodDatabaseProps {
@@ -13,7 +13,9 @@ interface FoodDatabaseProps {
 export default function FoodDatabase({ foods, onAddFood, onDeleteFood, translations: t }: FoodDatabaseProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [showAddFood, setShowAddFood] = useState(false);
+  const [showUpload, setShowUpload] = useState(false);
   const [newFood, setNewFood] = useState({ name: '', gi: 0, category: GICategory.LOW });
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const filteredFoods = foods.filter(f => f.name.toLowerCase().includes(searchTerm.toLowerCase()));
 
@@ -32,6 +34,52 @@ export default function FoodDatabase({ foods, onAddFood, onDeleteFood, translati
     return GICategory.HIGH;
   };
 
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      try {
+        const text = event.target?.result as string;
+        if (file.name.endsWith('.json')) {
+          const data = JSON.parse(text);
+          if (Array.isArray(data)) {
+            data.forEach(item => {
+              if (item.name && typeof item.gi === 'number') {
+                onAddFood({
+                  name: item.name,
+                  gi: item.gi,
+                  category: getGICategory(item.gi)
+                });
+              }
+            });
+          }
+        } else if (file.name.endsWith('.csv')) {
+          const lines = text.split('\n');
+          lines.slice(1).forEach(line => {
+            const [name, giStr] = line.split(',');
+            if (name && giStr) {
+              const gi = parseInt(giStr.trim());
+              if (!isNaN(gi)) {
+                onAddFood({
+                  name: name.trim(),
+                  gi: gi,
+                  category: getGICategory(gi)
+                });
+              }
+            }
+          });
+        }
+        setShowUpload(false);
+      } catch (err) {
+        console.error('Error parsing file:', err);
+        alert('Greška pri učitavanju fajla. Provjerite format.');
+      }
+    };
+    reader.readAsText(file);
+  };
+
   return (
     <div className="space-y-4">
       <div className="relative">
@@ -41,74 +89,167 @@ export default function FoodDatabase({ foods, onAddFood, onDeleteFood, translati
           placeholder={t.search} 
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          className="w-full pl-12 pr-4 py-4 bg-white border border-slate-200 rounded-2xl focus:ring-2 focus:ring-blue-500/20 text-sm"
+          className="w-full pl-12 pr-4 py-4 bg-white border border-slate-200 rounded-2xl focus:ring-2 focus:ring-blue-500/20 text-sm focus:outline-none transition-all shadow-sm"
         />
       </div>
 
-      {!showAddFood ? (
+      <div className="grid grid-cols-2 gap-3">
         <button 
-          onClick={() => setShowAddFood(true)}
-          className="w-full py-4 border-2 border-dashed border-slate-200 rounded-2xl flex items-center justify-center gap-2 text-slate-400 hover:border-blue-400 hover:text-blue-500 transition-all font-bold text-sm"
+          onClick={() => { setShowAddFood(true); setShowUpload(false); }}
+          className="py-4 border-2 border-dashed border-slate-200 rounded-2xl flex flex-col items-center justify-center gap-1 text-slate-400 hover:border-blue-400 hover:text-blue-500 transition-all font-bold text-[10px] uppercase tracking-widest"
         >
           <Plus size={20} />
           {t.addFood}
         </button>
-      ) : (
-        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="p-5 bg-blue-50/50 border border-blue-100 rounded-3xl space-y-4">
-          <h3 className="font-bold text-blue-900 text-sm">{t.newFood}</h3>
-          <div className="space-y-4">
-            <input 
-              type="text" 
-              placeholder={t.foodName}
-              className="w-full p-4 bg-white rounded-2xl border-none font-medium text-sm shadow-sm"
-              value={newFood.name}
-              onChange={(e) => setNewFood({...newFood, name: e.target.value})}
-            />
-            <div className="grid grid-cols-2 gap-4">
-              <input 
-                type="number" 
-                className="w-full p-4 bg-white rounded-2xl border-none font-medium text-sm shadow-sm"
-                value={newFood.gi || ''}
-                onChange={(e) => {
-                  const val = parseInt(e.target.value) || 0;
-                  setNewFood({...newFood, gi: val, category: getGICategory(val)});
-                }}
-              />
-              <div className={`p-4 rounded-2xl flex items-center justify-center font-black text-xs ${
-                newFood.category === GICategory.LOW ? 'bg-green-500 text-white' : 
-                newFood.category === GICategory.MEDIUM ? 'bg-orange-500 text-white' : 'bg-red-500 text-white'
-              }`}>
-                {newFood.category}
+        <button 
+          onClick={() => { setShowUpload(true); setShowAddFood(false); }}
+          className="py-4 border-2 border-dashed border-slate-200 rounded-2xl flex flex-col items-center justify-center gap-1 text-slate-400 hover:border-blue-400 hover:text-blue-500 transition-all font-bold text-[10px] uppercase tracking-widest"
+        >
+          <Upload size={20} />
+          {t.uploadFoods}
+        </button>
+      </div>
+
+      <AnimatePresence>
+        {showAddFood && (
+          <motion.div 
+            initial={{ opacity: 0, height: 0 }} 
+            animate={{ opacity: 1, height: 'auto' }} 
+            exit={{ opacity: 0, height: 0 }}
+            className="overflow-hidden"
+          >
+            <div className="p-6 bg-blue-50/50 border border-blue-100 rounded-[2rem] space-y-4 mb-4">
+              <h3 className="font-black text-blue-900 border-l-4 border-blue-600 pl-3 uppercase text-[10px] tracking-widest">{t.newFood}</h3>
+              <div className="space-y-4">
+                <input 
+                  type="text" 
+                  placeholder={t.foodName}
+                  className="w-full p-4 bg-white rounded-2xl border-none font-bold text-sm shadow-sm focus:ring-2 focus:ring-blue-500/20 transition-all"
+                  value={newFood.name}
+                  onChange={(e) => setNewFood({...newFood, name: e.target.value})}
+                />
+                <div className="flex gap-4">
+                  <div className="flex-1 space-y-1">
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2">{t.gi}</p>
+                    <input 
+                      type="number" 
+                      className="w-full p-4 bg-white rounded-2xl border-none font-black text-sm shadow-sm focus:ring-2 focus:ring-blue-500/20 transition-all"
+                      value={newFood.gi || ''}
+                      onChange={(e) => {
+                        const val = parseInt(e.target.value) || 0;
+                        setNewFood({...newFood, gi: val, category: getGICategory(val)});
+                      }}
+                    />
+                  </div>
+                  <div className="flex-1 space-y-1">
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2">Kategorija</p>
+                    <div className={`w-full p-4 rounded-2xl flex items-center justify-center font-black text-xs shadow-sm ${
+                      newFood.category === GICategory.LOW ? 'bg-green-500 text-white' : 
+                      newFood.category === GICategory.MEDIUM ? 'bg-orange-500 text-white' : 'bg-red-500 text-white'
+                    }`}>
+                      {newFood.category === GICategory.LOW ? 'NISKI' : newFood.category === GICategory.MEDIUM ? 'SREDNJI' : 'VISOK'}
+                    </div>
+                  </div>
+                </div>
+                <div className="flex gap-3">
+                  <button onClick={() => setShowAddFood(false)} className="flex-1 py-4 font-black text-slate-400 text-[10px] uppercase tracking-widest">{t.cancel}</button>
+                  <button onClick={handleAddFood} className="flex-1 py-4 bg-blue-600 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-lg shadow-blue-200">{t.save}</button>
+                </div>
               </div>
             </div>
-            <div className="flex gap-3">
-              <button onClick={() => setShowAddFood(false)} className="flex-1 py-4 font-bold text-slate-500 text-xs uppercase">{t.cancel}</button>
-              <button onClick={handleAddFood} className="flex-1 py-4 bg-blue-600 text-white rounded-2xl font-bold text-xs uppercase">{t.save}</button>
-            </div>
-          </div>
-        </motion.div>
-      )}
+          </motion.div>
+        )}
 
-      <div className="space-y-2 max-h-[400px] overflow-y-auto pr-2">
+        {showUpload && (
+          <motion.div 
+            initial={{ opacity: 0, height: 0 }} 
+            animate={{ opacity: 1, height: 'auto' }} 
+            exit={{ opacity: 0, height: 0 }}
+            className="overflow-hidden"
+          >
+            <div className="p-6 bg-slate-900 text-white rounded-[2rem] space-y-6 mb-4 relative overflow-hidden">
+              <div className="relative z-10 space-y-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-3 bg-white/10 rounded-2xl">
+                    <Upload size={24} className="text-blue-400" />
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-sm">Prenesi bazu namirnica</h3>
+                    <p className="text-[10px] text-slate-400">Podržani formati: .JSON, .CSV</p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 gap-2">
+                  <button 
+                    onClick={() => fileInputRef.current?.click()}
+                    className="w-full py-4 bg-white/5 border border-white/10 rounded-2xl flex items-center justify-between px-6 group hover:bg-white/10 transition-all"
+                  >
+                    <div className="flex items-center gap-3">
+                      <FileType size={18} className="text-blue-400" />
+                      <span className="text-xs font-bold">Odaberi fajl...</span>
+                    </div>
+                    <Plus size={16} className="opacity-40 group-hover:opacity-100 transition-opacity" />
+                  </button>
+                  <input 
+                    type="file" 
+                    className="hidden" 
+                    ref={fileInputRef}
+                    accept=".json,.csv"
+                    onChange={handleFileUpload}
+                  />
+                </div>
+
+                <div className="p-4 bg-white/5 rounded-2xl space-y-2">
+                  <p className="text-[9px] font-black uppercase text-blue-400 tracking-widest">Uputstvo za format:</p>
+                  <p className="text-[9px] text-slate-400 leading-relaxed uppercase">
+                    CSV: Naziv, GI (Prva linija je zaglavlje)<br/>
+                    JSON: Array objekata {"{ \"name\": \"Nutela\", \"gi\": 55 }"}
+                  </p>
+                </div>
+
+                <button onClick={() => setShowUpload(false)} className="w-full py-3 text-[10px] font-black uppercase tracking-widest text-slate-500 hover:text-white transition-colors">
+                  {t.cancel}
+                </button>
+              </div>
+              <div className="absolute top-0 right-0 w-32 h-32 bg-blue-600/10 rounded-full -mr-16 -mt-16 blur-3xl" />
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <div className="space-y-2 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
         {filteredFoods.map((food) => (
-          <div key={food.id} className="p-4 bg-white border border-slate-100 rounded-2xl flex items-center justify-between">
+          <motion.div 
+            layout
+            key={food.id} 
+            className="p-4 bg-white border border-slate-100 rounded-2xl flex items-center justify-between group hover:border-blue-200 transition-all"
+          >
             <div className="flex items-center gap-3">
-              <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-black text-[9px] border ${
-                food.category === GICategory.LOW ? 'bg-green-100 text-green-600 border-green-200' :
-                food.category === GICategory.MEDIUM ? 'bg-orange-100 text-orange-600 border-orange-200' :
-                'bg-red-100 text-red-600 border-red-200'
+              <div className={`w-12 h-12 rounded-xl flex items-center justify-center font-black text-[10px] border shadow-sm ${
+                food.category === GICategory.LOW ? 'bg-green-500 text-white border-green-400' :
+                food.category === GICategory.MEDIUM ? 'bg-orange-500 text-white border-orange-400' :
+                'bg-red-500 text-white border-red-400'
               }`}>
                 {food.category}
               </div>
               <div>
-                <p className="font-bold text-slate-800 text-sm leading-tight">{food.name}</p>
-                <p className="text-[9px] text-slate-400 font-black tracking-widest uppercase">GI: {food.gi}</p>
+                <p className="font-bold text-slate-800 text-sm leading-tight group-hover:text-blue-600 transition-colors uppercase tracking-tight">{food.name}</p>
+                <div className="flex items-center gap-2 mt-1">
+                  <span className="text-[10px] text-slate-400 font-black tracking-widest">GI: {food.gi}</span>
+                  <div className={`w-1.5 h-1.5 rounded-full ${
+                    food.category === GICategory.LOW ? 'bg-green-500' :
+                    food.category === GICategory.MEDIUM ? 'bg-orange-500' : 'bg-red-500'
+                  }`} />
+                </div>
               </div>
             </div>
-            <button onClick={() => food.id && onDeleteFood(food.id)} className="p-2 text-slate-200 hover:text-red-500">
+            <button 
+              onClick={() => food.id && onDeleteFood(food.id)} 
+              className="p-3 text-slate-200 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"
+            >
               <Trash2 size={16} />
             </button>
-          </div>
+          </motion.div>
         ))}
       </div>
     </div>

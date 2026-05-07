@@ -70,7 +70,7 @@ export default function App() {
             <Shield size={48} />
           </div>
           <div className="space-y-2">
-            <h1 className="text-4xl font-black tracking-tighter">GlucoGuard <span className="text-blue-500">3.01</span></h1>
+            <h1 className="text-4xl font-black tracking-tighter">GlucoGuard <span className="text-blue-500">3.2</span></h1>
             <p className="text-slate-400 font-medium leading-relaxed">{t.about.description}</p>
           </div>
           
@@ -85,7 +85,7 @@ export default function App() {
               <div className="w-8 h-8 rounded-full bg-purple-500/20 flex items-center justify-center text-purple-400">
                 <Shield size={16} />
               </div>
-              <p className="text-[10px] font-bold uppercase tracking-widest">Fuad Hasanović, mag. inf.</p>
+              <p className="text-[10px] font-bold uppercase tracking-widest">Fuad Hasanović, dipl.ing.informatike</p>
             </div>
             <div className="flex items-center gap-3">
               <div className="w-8 h-8 rounded-full bg-green-500/20 flex items-center justify-center text-green-400">
@@ -123,16 +123,17 @@ export default function App() {
       <div className="w-full max-w-md min-h-screen bg-white flex flex-col relative shadow-2xl overflow-hidden">
         
         <header className="px-6 py-4 flex justify-between items-center border-b border-slate-100 sticky top-0 bg-white/80 backdrop-blur-md z-40">
-          <div className="flex items-center gap-2">
-            <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center text-white shadow-lg shadow-blue-200">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-blue-600 shadow-md border border-blue-50 relative">
               <Shield size={20} />
+              <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full border-2 border-white" />
             </div>
             <div>
               <h1 className="font-black text-xl tracking-tighter leading-none flex items-baseline gap-1">
                 GlucoGuard
-                <span className="text-[9px] text-blue-600 font-black bg-blue-50 px-1.5 py-0.5 rounded-full">v3.01</span>
+                <span className="text-[9px] text-blue-600 font-black bg-blue-50 px-1.5 py-0.5 rounded-full border border-blue-100">v3.2</span>
               </h1>
-              <p className="text-[11px] text-slate-500 font-serif italic mt-0.5">{profile?.name || (user ? 'Fuad Hasanović, mag. inf.' : 'Lokalni Korisnik')}</p>
+              <p className="text-[11px] text-slate-500 font-serif italic mt-0.5">{profile?.name || (user ? 'Fuad Hasanović, dipl.ing.informatike' : 'Lokalni Korisnik')}</p>
             </div>
           </div>
 
@@ -185,7 +186,7 @@ export default function App() {
                         <User size={24} />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="font-bold text-slate-900 truncate">{profile?.name || (user ? 'Fuad Hasanović, mag. inf.' : t.about.developer)}</p>
+                        <p className="font-bold text-slate-900 truncate">{profile?.name || (user ? 'Fuad Hasanović, dipl.ing.informatike' : t.about.developer)}</p>
                         <p className="text-[10px] text-slate-500 truncate">{user?.email || 'Local Mode'}</p>
                       </div>
                     </div>
@@ -231,13 +232,18 @@ export default function App() {
                           <span>Odjavi se (Logout)</span>
                         </button>
                       ) : (
-                        <button 
-                          onClick={handleSignIn}
-                          className="w-full flex items-center gap-3 p-4 bg-blue-600 text-white rounded-2xl font-bold text-xs uppercase tracking-widest hover:bg-blue-700 transition-colors shadow-lg shadow-blue-100"
-                        >
-                          <User size={18} />
-                          <span>Prijavi se (Login)</span>
-                        </button>
+                        <div className="space-y-3">
+                          <button 
+                            onClick={handleSignIn}
+                            className="w-full flex items-center gap-3 p-4 bg-blue-600 text-white rounded-2xl font-bold text-xs uppercase tracking-widest hover:bg-blue-700 transition-colors shadow-lg shadow-blue-100 active:scale-95"
+                          >
+                            <User size={18} />
+                            <span>Prijavi se (Login)</span>
+                          </button>
+                          <p className="text-[10px] text-slate-400 font-medium leading-relaxed px-2">
+                            {t.about.loginSubtitle}
+                          </p>
+                        </div>
                       )}
                     </div>
                   </div>
@@ -245,7 +251,7 @@ export default function App() {
 
                 <div className="p-6 bg-slate-50 border-t border-slate-100">
                   <div className="flex items-center justify-between text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-                    <span>Verzija 3.01</span>
+                    <span>Verzija 3.2</span>
                     <div className="flex items-center gap-1">
                       <Settings size={12} />
                       <span>Stable Build</span>
