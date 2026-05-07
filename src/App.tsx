@@ -70,8 +70,8 @@ export default function App() {
             <Shield size={48} />
           </div>
           <div className="space-y-2">
-            <h1 className="text-4xl font-black tracking-tighter">GlucoGuard <span className="text-blue-500">3.2</span></h1>
-            <p className="text-slate-400 font-medium leading-relaxed">{t.about.description}</p>
+            <h1 className="text-3xl sm:text-4xl font-black tracking-tighter">GlucoGuard <span className="text-blue-500">3.2</span></h1>
+            <p className="text-slate-400 font-medium leading-relaxed px-4">{t.about.description}</p>
           </div>
           
           <div className="bg-slate-800/50 p-6 rounded-[2.5rem] border border-white/5 space-y-4 text-left">
@@ -124,16 +124,19 @@ export default function App() {
         
         <header className="px-6 py-4 flex justify-between items-center border-b border-slate-100 sticky top-0 bg-white/80 backdrop-blur-md z-40">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-blue-600 shadow-md border border-blue-50 relative">
-              <Shield size={20} />
-              <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full border-2 border-white" />
+            <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-blue-600 shadow-md border border-blue-50 relative overflow-hidden group">
+              <Shield size={20} className="relative z-10" />
+              <div className="absolute inset-0 bg-red-500/10 scale-0 group-hover:scale-100 transition-transform duration-500 rounded-full" />
+              <div className="absolute bottom-0 right-0 w-4 h-4 bg-red-500 rounded-full flex items-center justify-center border-2 border-white translate-x-1 translate-y-1">
+                <div className="w-1 h-1 bg-white rounded-full opacity-60" />
+              </div>
             </div>
             <div>
-              <h1 className="font-black text-xl tracking-tighter leading-none flex items-baseline gap-1">
+              <h1 className="font-black text-lg sm:text-xl tracking-tighter leading-none flex items-baseline gap-1">
                 GlucoGuard
                 <span className="text-[9px] text-blue-600 font-black bg-blue-50 px-1.5 py-0.5 rounded-full border border-blue-100">v3.2</span>
               </h1>
-              <p className="text-[11px] text-slate-500 font-serif italic mt-0.5">{profile?.name || (user ? 'Fuad Hasanović, dipl.ing.informatike' : 'Lokalni Korisnik')}</p>
+              <p className="text-[10px] text-slate-500 font-serif italic mt-0.5 truncate max-w-[150px] sm:max-w-none">{profile?.name || (user ? 'Fuad Hasanović, dipl.ing.informatike' : 'Lokalni Korisnik')}</p>
             </div>
           </div>
 
