@@ -1,0 +1,19 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background matching the splash -->
+  <rect width="512" height="512" rx="120" fill="#2563EB"/>
+  
+  <!-- The Shield -->
+  <path d="M256 60L420 110V260C420 380 256 460 256 460C256 460 92 380 92 260V110 L256 60Z" fill="white" stroke="#1E40AF" stroke-width="8"/>
+  
+  <!-- Red Drop -->
+  <path d="M256 160C256 160 180 250 180 320C180 362 214 396 256 396C298 396 332 362 332 320C332 250 256 160 256 160Z" fill="#EF4444"/>
+  
+  <!-- White highlight on drop -->
+  <path d="M256 190C256 190 200 255 200 310" stroke="white" stroke-width="12" stroke-linecap="round" opacity="0.3"/>
+  
+  <!-- Graph Line (The "G" curve) -->
+  <path d="M190 320L230 280L270 330L330 230" stroke="white" stroke-width="15" stroke-linecap="round" stroke-linejoin="round" />
+  
+  <!-- Small indicator circle -->
+  <circle cx="280" cy="340" r="8" fill="white" opacity="0.5"/>
+</svg>
