@@ -41,14 +41,20 @@ export default function FoodDatabase({ foods, onAddFood, onDeleteFood, translati
     const reader = new FileReader();
     reader.onload = (event) => {
       try {
-        const text = event.target?.result as string;
+        let text = event.target?.result as string;
+        
+        // Remove Byte Order Mark (BOM) if exists
+        if (text.charCodeAt(0) === 0xFEFF) {
+          text = text.substring(1);
+        }
+
         if (file.name.endsWith('.json')) {
           const data = JSON.parse(text);
           if (Array.isArray(data)) {
             data.forEach(item => {
               if (item.name && typeof item.gi === 'number') {
                 onAddFood({
-                  name: item.name,
+                  name: item.name.trim(),
                   gi: item.gi,
                   category: getGICategory(item.gi)
                 });
@@ -56,14 +62,20 @@ export default function FoodDatabase({ foods, onAddFood, onDeleteFood, translati
             });
           }
         } else if (file.name.endsWith('.csv')) {
-          const lines = text.split('\n');
-          lines.slice(1).forEach(line => {
-            const [name, giStr] = line.split(',');
-            if (name && giStr) {
-              const gi = parseInt(giStr.trim());
-              if (!isNaN(gi)) {
+          const lines = text.split(/\r?\n/);
+          lines.forEach((line, index) => {
+            // Skip header if it looks like one
+            if (index === 0 && (line.toLowerCase().includes('naziv') || line.toLowerCase().includes('name'))) return;
+            
+            const parts = line.split(/[,;]/); // Support both comma and semicolon separators
+            if (parts.length >= 2) {
+              const name = parts[0].trim().replace(/^["']|["']$/g, ''); // Remove quotes
+              const giStr = parts[1].trim().replace(/^["']|["']$/g, '');
+              const gi = parseInt(giStr);
+              
+              if (name && !isNaN(gi)) {
                 onAddFood({
-                  name: name.trim(),
+                  name: name,
                   gi: gi,
                   category: getGICategory(gi)
                 });
@@ -74,10 +86,13 @@ export default function FoodDatabase({ foods, onAddFood, onDeleteFood, translati
         setShowUpload(false);
       } catch (err) {
         console.error('Error parsing file:', err);
-        alert('Greška pri učitavanju fajla. Provjerite format.');
+        alert('Greška pri učitavanju fajla. Provjerite format i pokušajte ponovo (preporučeno UTF-8 kodiranje).');
       }
     };
-    reader.readAsText(file);
+    
+    // Most modern CSVs are UTF-8, but many Windows/Excel exports are Windows-1250
+    // Try to detect or default to UTF-8
+    reader.readAsText(file, 'UTF-8');
   };
 
   return (
