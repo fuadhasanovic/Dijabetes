@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Plus, Trash2, Salad, Search, Calculator, Calendar as CalendarIcon, Clock } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { FoodItem, SavedMeal, MealType } from '../../types';
+import { fuzzyMatch } from '../../lib/searchUtils';
 
 interface SavedMealsProps {
   foods: FoodItem[];
@@ -121,17 +122,68 @@ export default function SavedMeals({ foods, savedMeals, onAddSavedMeal, onDelete
                   <span className="text-[9px] font-black text-blue-700 uppercase tracking-widest">{t.totalGI}: {totalMealGI}</span>
                 </div>
               </div>
-              <div className="relative">
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+              <div className="relative group">
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-500 transition-colors" size={16} />
                 <input 
                   type="text" 
                   placeholder={t.search} 
-                  className="w-full pl-12 pr-4 py-4 bg-slate-50 rounded-2xl border-none text-xs font-bold" 
+                  className="w-full pl-12 pr-12 py-4 bg-slate-50 rounded-2xl border-none text-xs font-bold focus:ring-2 focus:ring-blue-500/20 transition-all" 
+                  value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                 />
+                {searchTerm && (
+                  <button 
+                    onClick={() => setSearchTerm('')}
+                    className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-300 hover:text-slate-500"
+                  >
+                    <Plus size={16} className="rotate-45" />
+                  </button>
+                )}
+
+                {/* Quick Results Overlay */}
+                {searchTerm && foods.filter(f => fuzzyMatch(f.name, searchTerm)).length > 0 && (
+                  <div className="absolute left-0 right-0 top-full mt-2 bg-white border border-slate-100 rounded-2xl shadow-xl z-50 max-h-48 overflow-y-auto p-2 scroll-smooth">
+                    {foods
+                      .filter(f => fuzzyMatch(f.name, searchTerm))
+                      .slice(0, 10)
+                      .map(food => {
+                        const isSelected = selectedFoods.find(sf => sf.id === food.id);
+                        return (
+                          <button
+                            key={food.id}
+                            onClick={() => {
+                              toggleFoodForMeal(food);
+                              setSearchTerm('');
+                            }}
+                            className={`w-full text-left px-4 py-3 rounded-xl flex items-center justify-between group mb-1 transition-all ${isSelected ? 'bg-blue-50 text-blue-700' : 'hover:bg-slate-50'}`}
+                          >
+                            <div className="flex items-center gap-3">
+                              <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-[10px] font-black ${
+                                food.category === 'NI' ? 'bg-green-100 text-green-700' :
+                                food.category === 'SI' ? 'bg-orange-100 text-orange-700' :
+                                'bg-red-100 text-red-700'
+                              }`}>
+                                {food.gi}
+                              </div>
+                              <span className="font-bold text-slate-700">{food.name}</span>
+                            </div>
+                            {isSelected ? (
+                              <div className="w-5 h-5 bg-blue-600 rounded-full flex items-center justify-center text-white">
+                                <Plus size={12} className="rotate-45" />
+                              </div>
+                            ) : (
+                              <Plus size={14} className="text-slate-300 group-hover:text-blue-500" />
+                            )}
+                          </button>
+                        );
+                      })
+                    }
+                  </div>
+                )}
               </div>
-              <div className="grid grid-cols-2 gap-2 max-h-60 overflow-y-auto pr-2 custom-scrollbar p-1">
-                {foods.filter(f => f.name.toLowerCase().includes(searchTerm.toLowerCase())).map(food => {
+              
+              <div className="grid grid-cols-2 gap-2 max-h-60 overflow-y-auto pr-2 custom-scrollbar p-1" id="food-selection-grid">
+                {foods.filter(f => fuzzyMatch(f.name, searchTerm)).map(food => {
                   const isSelected = selectedFoods.find(sf => sf.id === food.id);
                   return (
                     <button 

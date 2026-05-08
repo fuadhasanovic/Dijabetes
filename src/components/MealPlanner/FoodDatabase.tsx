@@ -2,6 +2,7 @@ import React, { useState, useRef } from 'react';
 import { Search, Plus, Trash2, Upload, FileJson, FileType } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { FoodItem, GICategory } from '../../types';
+import { fuzzyMatch } from '../../lib/searchUtils';
 
 interface FoodDatabaseProps {
   foods: FoodItem[];
@@ -17,7 +18,7 @@ export default function FoodDatabase({ foods, onAddFood, onDeleteFood, translati
   const [newFood, setNewFood] = useState({ name: '', gi: 0, category: GICategory.LOW });
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const filteredFoods = foods.filter(f => f.name.toLowerCase().includes(searchTerm.toLowerCase()));
+  const filteredFoods = foods.filter(f => fuzzyMatch(f.name, searchTerm));
 
   const handleAddFood = (e: React.FormEvent) => {
     e.preventDefault();
@@ -136,13 +137,42 @@ export default function FoodDatabase({ foods, onAddFood, onDeleteFood, translati
             <div className="p-6 bg-blue-50/50 border border-blue-100 rounded-[2rem] space-y-4 mb-4">
               <h3 className="font-black text-blue-900 border-l-4 border-blue-600 pl-3 uppercase text-[10px] tracking-widest">{t.newFood}</h3>
               <div className="space-y-4">
-                <input 
-                  type="text" 
-                  placeholder={t.foodName}
-                  className="w-full p-4 bg-white rounded-2xl border-none font-bold text-sm shadow-sm focus:ring-2 focus:ring-blue-500/20 transition-all"
-                  value={newFood.name}
-                  onChange={(e) => setNewFood({...newFood, name: e.target.value})}
-                />
+                <div className="relative">
+                  <input 
+                    type="text" 
+                    placeholder={t.foodName}
+                    className="w-full p-4 bg-white rounded-2xl border-none font-bold text-sm shadow-sm focus:ring-2 focus:ring-blue-500/20 transition-all"
+                    value={newFood.name}
+                    onChange={(e) => setNewFood({...newFood, name: e.target.value})}
+                  />
+                  {/* Autocomplete Suggestions */}
+                  {newFood.name.length >= 2 && foods.some(f => fuzzyMatch(f.name, newFood.name) && f.id !== 'temp') && (
+                    <div className="absolute left-0 right-0 top-full mt-2 bg-white border border-slate-100 rounded-2xl shadow-xl z-50 max-h-40 overflow-y-auto p-2">
+                      <p className="px-3 py-1 text-[8px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-50 mb-1">Pronađene slične namirnice:</p>
+                      {foods
+                        .filter(f => fuzzyMatch(f.name, newFood.name))
+                        .slice(0, 5)
+                        .map(sf => (
+                          <button
+                            key={sf.id}
+                            type="button"
+                            onClick={() => {
+                              setNewFood({ name: sf.name, gi: sf.gi, category: sf.category });
+                            }}
+                            className="w-full text-left px-3 py-2 hover:bg-blue-50 rounded-xl flex justify-between items-center group transition-colors"
+                          >
+                            <span className="text-xs font-bold text-slate-700">{sf.name}</span>
+                            <span className={`text-[9px] font-black px-2 py-0.5 rounded-lg ${
+                              sf.category === 'NI' ? 'bg-green-100 text-green-700' :
+                              sf.category === 'SI' ? 'bg-orange-100 text-orange-700' :
+                              'bg-red-100 text-red-700'
+                            }`}>GI: {sf.gi}</span>
+                          </button>
+                        ))
+                      }
+                    </div>
+                  )}
+                </div>
                 <div className="flex gap-4">
                   <div className="flex-1 space-y-1">
                     <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2">{t.gi}</p>
@@ -233,7 +263,7 @@ export default function FoodDatabase({ foods, onAddFood, onDeleteFood, translati
       </AnimatePresence>
 
       <div className="space-y-2 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
-        {filteredFoods.map((food) => (
+        {filteredFoods.length > 0 ? filteredFoods.map((food) => (
           <motion.div 
             layout
             key={food.id} 
@@ -265,7 +295,26 @@ export default function FoodDatabase({ foods, onAddFood, onDeleteFood, translati
               <Trash2 size={16} />
             </button>
           </motion.div>
-        ))}
+        )) : searchTerm && (
+          <div className="py-12 flex flex-col items-center justify-center text-center space-y-4">
+            <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center text-slate-300">
+              <Search size={32} />
+            </div>
+            <div>
+              <p className="text-sm font-bold text-slate-500">Nema rezultata za "{searchTerm}"</p>
+              <button 
+                onClick={() => {
+                  setNewFood({ name: searchTerm, gi: 0, category: GICategory.LOW });
+                  setShowAddFood(true);
+                  setShowUpload(false);
+                }}
+                className="mt-2 text-blue-600 font-black text-[10px] uppercase tracking-widest hover:underline"
+              >
+                + Dodaj "{searchTerm}" u bazu
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
